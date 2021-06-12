@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html {
+    @apply max-w-1440px w-full h-full mx-auto
+    px-4;
+  }
+
+  body {
+    @apply bg-gray-100
+    dark:bg-gray-900;
+  }
+
+  p, h1, h2, h3, h4, label {
+    @apply dark:text-white;
+  }
+
+  p, span, label, input, a, button {
+    @apply text-lg;
+  }
+
+  h1, h2, h3, h4 {
+    @apply mt-12 mb-5;
+  }
+
+  h1 {
+    @apply text-5xl font-semibold;
+  }
+
+  h2 {
+    @apply text-4xl font-semibold;
+  }
+
+  h3 {
+    @apply text-3xl font-semibold;
+  }
+
+  h4 {
+    @apply text-2xl font-semibold;
+  }
+
+  a {
+    @apply text-p hover:text-p-light;
+  }
+
+  p {
+    @apply my-4;
+  }
+
+  label {
+    @apply font-medium;
+  }
+}
+
+
