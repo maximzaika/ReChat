@@ -1,0 +1,208 @@
+{
+  "users": [
+    { "id": 1, "avatar": null, "name": "Turki", "lastMessage": "Ok OK bos", "time": "18:42" },
+    {
+      "id": 2,
+      "avatar": "Manu.jpg",
+      "name": "Manu",
+      "lastMessage": "How's things with you?",
+      "time": "yesterday"
+    },
+    {
+      "id": 3,
+      "avatar": "Nikhi.jpg",
+      "name": "Nikhi",
+      "lastMessage": "Yeah, put a mil and wait",
+      "time": "Friday"
+    },
+    {
+      "id": 4,
+      "avatar": null,
+      "name": "Max",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 5,
+      "avatar": null,
+      "name": "Kriss",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 6,
+      "avatar": null,
+      "name": "Evan",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 7,
+      "avatar": null,
+      "name": "Valeriy",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 8,
+      "avatar": null,
+      "name": "Alena",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 9,
+      "avatar": null,
+      "name": "Karina",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 10,
+      "avatar": null,
+      "name": "Anton",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 11,
+      "avatar": null,
+      "name": "Michael",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 12,
+      "avatar": null,
+      "name": "Zoya",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 13,
+      "avatar": null,
+      "name": "Anton",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 14,
+      "avatar": null,
+      "name": "Michael",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 15,
+      "avatar": null,
+      "name": "Zoya",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 16,
+      "avatar": null,
+      "name": "Anton",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 17,
+      "avatar": null,
+      "name": "Michael",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 18,
+      "avatar": null,
+      "name": "Zoya",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 19,
+      "avatar": null,
+      "name": "Anton",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 20,
+      "avatar": null,
+      "name": "Michael",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 21,
+      "avatar": null,
+      "name": "Zoya",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 22,
+      "avatar": null,
+      "name": "Anton",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 23,
+      "avatar": null,
+      "name": "Michael",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 24,
+      "avatar": null,
+      "name": "Zoya",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 25,
+      "avatar": null,
+      "name": "Anton",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 26,
+      "avatar": null,
+      "name": "Michael",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 27,
+      "avatar": null,
+      "name": "Zoya",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 28,
+      "avatar": null,
+      "name": "Anton",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 29,
+      "avatar": null,
+      "name": "Michael",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    },
+    {
+      "id": 30,
+      "avatar": null,
+      "name": "Zoya",
+      "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "time": "15:15"
+    }
+  ]
+}

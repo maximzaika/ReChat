@@ -12,11 +12,18 @@ export const authStart = () => {
   };
 };
 
-export const authSuccess = (token, userId) => {
+export const authSuccess = (token, userId, expiresIn, firstName, surName) => {
+  Cookies.set("token", token, { expires: expiresIn });
+  Cookies.set("userId", userId, { expires: expiresIn });
+  Cookies.set("firstName", firstName, { expires: expiresIn });
+  Cookies.set("surName", surName, { expires: expiresIn });
+
   return {
     type: actions.AUTH_SUCCESS,
     token: token,
     userId: userId,
+    firstName: firstName,
+    surName: surName,
   };
 };
 
@@ -53,6 +60,8 @@ export const authFail = (errorType) => {
 export const authLogout = () => {
   Cookies.expire("token");
   Cookies.expire("userId");
+  Cookies.expire("firstName");
+  Cookies.expire("surName");
   return {
     type: actions.AUTH_LOGOUT,
   };
@@ -71,7 +80,46 @@ export const authReset = () => {
   };
 };
 
-export const auth = (email, password, isToSignUp) => {
+const authSQL = (
+  url,
+  idToken,
+  expiresIn,
+  localId,
+  email,
+  dispatch,
+  firstName,
+  surName
+) => {
+  const userData = {
+    userGoogleId: localId,
+    firstName: firstName,
+    surName: surName,
+    email: email,
+  };
+
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userData),
+  })
+    .then((response) => {
+      return response.json();
+    })
+    .then((response) => {
+      const fname = response.firstName ? response.firstName : firstName;
+      const sname = response.surName ? response.surName : surName;
+      if (response.ok) {
+        dispatch(authSuccess(idToken, localId, expiresIn, fname, sname));
+      } else {
+        return Promise.reject(response);
+      }
+    })
+    .catch((response) => {
+      dispatch(authFail(response.message));
+    });
+};
+
+export const auth = (email, password, isToSignUp, firstName, surName) => {
   return (dispatch) => {
     dispatch(authStart());
 
@@ -97,18 +145,34 @@ export const auth = (email, password, isToSignUp) => {
         return Promise.reject(response);
       })
       .then((response) => {
-        // console.log(response);
         const idToken = response.idToken;
         const localId = response.localId;
         const expiresIn = response.expiresIn;
-        Cookies.set("token", idToken, { expires: expiresIn });
-        Cookies.set("userId", localId, { expires: expiresIn });
-        dispatch(authSuccess(idToken, localId));
+
+        if (isToSignUp) {
+          authSQL(
+            "http://192.168.0.158/rechat/php/Users/post.php",
+            idToken,
+            expiresIn,
+            localId,
+            email,
+            dispatch,
+            firstName,
+            surName
+          );
+        } else {
+          authSQL(
+            "http://192.168.0.158/rechat/php/Users/fetch.php",
+            idToken,
+            expiresIn,
+            localId,
+            email,
+            dispatch
+          );
+        }
       })
       .catch((response) => {
-        console.log(response);
         response.json().then((json) => {
-          console.log(json);
           dispatch(authFail(json.error.message));
         });
       });
@@ -119,12 +183,19 @@ export const authCheckAuthToken = () => {
   return (dispatch) => {
     const token = Cookies.get("token");
     const userId = Cookies.get("userId");
+    const firstName = Cookies.get("firstName");
+    const surName = Cookies.get("surName");
 
-    if (token === undefined && userId === undefined) {
+    if (
+      token === undefined ||
+      userId === undefined ||
+      firstName === undefined ||
+      surName === undefined
+    ) {
       dispatch(authLogout());
       return;
     }
 
-    dispatch(authSuccess(token, userId));
+    dispatch(authSuccess(token, userId, null, firstName, surName));
   };
 };

@@ -173,10 +173,6 @@ function AuthForm({ onAuth, type, isLoading, isError, ...props }) {
 
       setAttemptSubmit(true);
     } else {
-      // console.log(form);
-      // console.log(form.email.value);
-      // console.log(form.password.value.length > 0);
-      // console.log(form.password.value.length > 0);
       invalid = form.password.value.length === "" || form.email.length === "";
     }
 
@@ -184,12 +180,13 @@ function AuthForm({ onAuth, type, isLoading, isError, ...props }) {
       return;
     }
 
-    // const formData = {};
-    // for (let key in form) {
-    //   formData[key] = form[key].value;
-    // }
-
-    onAuth(form.email.value, form.password.value, authType);
+    onAuth(
+      form.email.value,
+      form.password.value,
+      authType,
+      form.firstName.value,
+      form.surName.value
+    );
   };
 
   const onInputChangeHandler = (event, key) => {
