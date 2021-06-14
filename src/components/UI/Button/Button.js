@@ -1,3 +1,4 @@
+import React from "react";
 import "./Button.css";
 
 function Button({
@@ -8,15 +9,17 @@ function Button({
   clicked,
   isLoading,
   disabled,
+  marginPadding,
 }) {
   const disabledForced = disabled && !isLoading ? "disabled" : "";
   const customClass = className ? className : "";
-  const disabledLoading = isLoading ? "temp-disabled" : "";
+  const disabledLoading = isLoading ? "loading" : "";
   const btnType = type === undefined ? "primary" : type;
+  const customMarginPadding = marginPadding ? marginPadding : "py-2 px-6 my-4";
 
   return (
     <button
-      className={`btn ${btnType} ${customClass} ${disabledForced} ${disabledLoading}`}
+      className={`btn ${customMarginPadding} ${btnType} ${disabledForced} ${disabledLoading} ${customClass}`}
       onClick={clicked}
       aria-label={ariaLabel}
       disabled={disabled}

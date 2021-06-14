@@ -2,7 +2,6 @@ import IcoOk from "../../../assets/ico/ico-ok";
 import { TEXT_COLOR_DANGER } from "../../../shared/colors";
 
 function InputVerify({
-  inputType,
   valid,
   validate,
   label,
@@ -13,34 +12,8 @@ function InputVerify({
   clicked,
   ...props
 }) {
-  let inputElement = null;
   const initialClass =
-    "outline-none block w-full border border-solid " +
-    "border-gray-400 bg-gray-50 rounded " +
-    "px-2 py-1.5 focus:ring focus:border-p";
-
-  switch (inputType) {
-    case "textarea":
-      inputElement = (
-        <textarea
-          className={initialClass}
-          onChange={changed}
-          onClick={clicked}
-          {...config}
-        />
-      );
-      break;
-    default:
-      // input
-      inputElement = (
-        <input
-          className={initialClass}
-          onChange={changed}
-          onClick={clicked}
-          {...config}
-        />
-      );
-  }
+    "block w-full border border-solid border-gray-400 px-2 py-1.5";
 
   let errorEl = null;
   if (showErrors) {
@@ -76,7 +49,12 @@ function InputVerify({
             `}
           />
         )}
-        {inputElement}
+        <input
+          className={initialClass}
+          onChange={changed}
+          onClick={clicked}
+          {...config}
+        />
       </div>
 
       {errorEl}

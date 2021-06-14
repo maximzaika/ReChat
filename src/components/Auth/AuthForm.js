@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { updateObject } from "../../shared/updateData";
 import { inputValidity, verifyPasswords } from "../../shared/inputValidity";
 

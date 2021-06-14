@@ -1,15 +1,36 @@
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useState, useEffect, useRef } from "react";
 import HorizontalLine from "../components/UI/HorizontalLine/HorizontalLine";
 import useFetchJson from "../hooks/useFetchJson";
 import OverflowY from "../components/UI/OverflowY/OverflowY";
+import TextArea from "../components/UI/TextArea/TextArea";
+import IcoSendMessage from "../assets/ico/ico-send-message";
+import Button from "../components/UI/Button/Button";
+import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 
 function Chat() {
-  const { users } = useFetchJson("./json/users.json");
-  const { userMessages } = useFetchJson("./json/userMessages.json");
+  const [users, setUsers] = useFetchJson("./json/users.json", "inputMessage");
+  const userMessages = useFetchJson("./json/userMessages.json")[0];
   const [messages, setMessages] = useState([]);
 
-  const fetchUserMessages = (userId) => {
-    if (users.length < 0) {
+  const [activeChat, setActiveChat] = useState(null);
+  const [indexActiveChat, setIndexActiveChat] = useState(null);
+  const refScroll = useRef(null);
+
+  useEffect(() => {
+    if (activeChat) {
+      const index = users.findIndex((user) => user.id === activeChat);
+      setIndexActiveChat(index);
+    }
+  }, [activeChat]);
+
+  const onInputMessageHandler = (value) => {
+    const tempUsers = [...users];
+    tempUsers[indexActiveChat].inputMessage = value;
+    setUsers(tempUsers);
+  };
+
+  const onClickDisplayMessagesHandler = (userId) => {
+    if (users.length < 0 || activeChat === userId) {
       return;
     }
 
@@ -21,25 +42,35 @@ function Chat() {
           id: message.id,
           message: message.message,
           time: message.time,
-          from: message.from,
+          type: message.type,
+          showTime: false,
         });
       }
     }
 
     const sortedMessages = messagesArr.sort((a, b) =>
-      a.time < b.time ? 1 : -1
+      a.time > b.time ? 1 : -1
     );
 
-    console.log(sortedMessages);
-
     setMessages(sortedMessages);
+    setActiveChat(userId);
   };
-  // const date = new Date();
-  // const ms = date.getTime();
-  // console.log(ms);
-  //
-  // const fullDate = new Date(ms).toString();
-  // console.log(fullDate);
+
+  const onHoverShowTime = (event, messageId) => {
+    const eventType = event._reactName;
+    const index = messages.findIndex((message) => message.id === messageId);
+    const tempMessage = [...messages];
+
+    if (eventType === "onMouseEnter") {
+      tempMessage[index].showTime = true;
+      setMessages(tempMessage);
+    }
+
+    if (eventType === "onMouseLeave" || !tempMessage[index].showTime) {
+      tempMessage[index].showTime = false;
+      setMessages(tempMessage);
+    }
+  };
 
   return (
     <div className="flex -mx-4">
@@ -53,8 +84,10 @@ function Chat() {
               return (
                 <div
                   key={user.id}
-                  className="px-4 cursor-pointer hover:bg-gray-700"
-                  onClick={() => fetchUserMessages(user.id)}
+                  className={`px-4 cursor-pointer ${
+                    activeChat === user.id ? "bg-gray-600" : ""
+                  } hover:bg-gray-700`}
+                  onClick={() => onClickDisplayMessagesHandler(user.id)}
                 >
                   <div className="flex py-2 gap-4">
                     <div className="flex-none">
@@ -94,21 +127,49 @@ function Chat() {
         </OverflowY>
       </div>
 
-      <div className="h-screen w-screen">
-        {messages.map((message) => {
-          let msg = "";
-          if (message.from === 1) {
-            msg = (
-              <p key={message.id} className="text-p">
-                {message.message}
-              </p>
-            );
-          } else {
-            msg = <p key={message.id}>{message.message}</p>;
-          }
+      <div className="flex flex-col h-screen w-full bg-gray-800 border-r-2 border-black">
+        <OverflowY
+          getRef={refScroll}
+          className="flex flex-col-reverse pl-2 pr-4"
+        >
+          {messages.map((message) => {
+            const allMessagesClass = "p-2 rounded max-w-sm";
+            let customMessageClass =
+              message.type === 1 ? "bg-gray-600" : "ml-auto bg-p-dark";
 
-          return msg;
-        })}
+            const date = new Date(message.time);
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            const time = `${hours}:${minutes}`;
+
+            return (
+              <div key={message.id} className="flex my-2">
+                <span
+                  className={`${allMessagesClass} ${customMessageClass} cursor-pointer fe`}
+                  onMouseEnter={(event) => onHoverShowTime(event, message.id)}
+                  onMouseLeave={(event) => onHoverShowTime(event, message.id)}
+                >
+                  {message.message}
+                </span>
+                {message.showTime && (
+                  <span className="ml-2 text-sm italic">{time}</span>
+                )}
+              </div>
+            );
+          })}
+        </OverflowY>
+        {indexActiveChat !== null && (
+          <form className="flex p-2">
+            <TextArea
+              placeholder="Type a message"
+              changed={(value) => onInputMessageHandler(value)}
+              value={users[indexActiveChat].inputMessage}
+            />
+            <ButtonIcon>
+              <IcoSendMessage /> Send
+            </ButtonIcon>
+          </form>
+        )}
       </div>
     </div>
   );

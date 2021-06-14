@@ -28,6 +28,7 @@ export const authSuccess = (token, userId, expiresIn, firstName, surName) => {
 };
 
 export const authFail = (errorType) => {
+  console.log(errorType);
   let errorMessage = "";
   switch (errorType) {
     case "EMAIL_EXISTS":
@@ -46,6 +47,9 @@ export const authFail = (errorType) => {
       break;
     case "INVALID_PASSWORD":
       errorMessage = "Invalid password. Ensure it is accurate and not empty.";
+      break;
+    case "Failed to fetch":
+      errorMessage = "Unable to fetch data. No connection to database.";
       break;
     default:
       errorMessage = "You have attempting too many times. Try again later.";

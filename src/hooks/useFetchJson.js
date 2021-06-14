@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export default function useFetchJson(url) {
+export default function useFetchJson(url, addExtraObject) {
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -14,9 +14,15 @@ export default function useFetchJson(url) {
         return response.json();
       })
       .then((json) => {
+        if (addExtraObject) {
+          for (let d in json) {
+            json[d][addExtraObject] = "";
+          }
+        }
+
         setData(json);
       });
   }, []);
 
-  return data;
+  return [data, setData];
 }

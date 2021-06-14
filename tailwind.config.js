@@ -30,7 +30,7 @@ module.exports = {
     extend: {
       fill: ["first"],
       textColor: ["disabled"],
-      backgroundColor: ["disabled"],
+      backgroundColor: ["disabled", "active"],
       cursor: ["disabled"],
     },
   },
