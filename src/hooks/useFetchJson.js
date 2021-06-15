@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
 
-export default function useFetchJson(url, addExtraObject) {
+export default function useFetchJson(url, addExtraObject, isAuth) {
   const [data, setData] = useState([]);
 
   useEffect(() => {
+    if (!isAuth) {
+      setData([{ authError: "Please login" }]);
+      return;
+    }
+
     fetch(url, {
       headers: {
         "Content-Type": "application/json",

@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function OverflowY({ children, getRef, className }) {
+export default function DivOverflowY({ children, getRef, className }) {
   const classes =
     `${className} h-full overflow-y-auto overflow-x-hidden ` +
     `scrollbar-thin scrollbar-track-gray-700 ` +

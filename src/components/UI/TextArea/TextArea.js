@@ -1,11 +1,11 @@
 import React from "react";
 
-export default function TextArea({ placeholder, changed, value }) {
+export default function TextArea({ placeholder, changed, value, keyPressed }) {
   const initialClass = "block w-full px-2 py-1.5";
 
   const onInputResize = (event) => {
+    console.log(event);
     const target = event.target;
-    const value = target.value;
 
     if (event.target.scrollHeight < 132) {
       // Resize the height of the textarea up until 132
@@ -31,6 +31,7 @@ export default function TextArea({ placeholder, changed, value }) {
       placeholder={placeholder}
       value={value}
       rows={1}
+      onKeyPress={keyPressed}
     />
   );
 }

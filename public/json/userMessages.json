@@ -2,112 +2,112 @@
   {
   "id": 1,
   "userId": 1,
-  "type": 1,
+  "recipient": 1,
   "message": "From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me From me ",
   "time": 1623598074733
   },
     {
     "id": 2,
     "userId": 1,
-    "type": 1,
+    "recipient": 1,
     "message": "2 From me ",
     "time": 1623598074867
   },
   {
     "id": 25,
     "userId": 1,
-    "type": 1,
+    "recipient": 1,
     "message": "25 Test message",
     "time": 1623598074868
   },
   {
     "id": 26,
     "userId": 1,
-    "type": 0,
+    "recipient": 0,
     "message": "26 Test message",
     "time": 16235980747869
   },
   {
     "id": 27,
     "userId": 1,
-    "type": 1,
+    "recipient": 1,
     "message": "27 Test message",
     "time": 1623598074870
   },
   {
     "id": 28,
     "userId": 1,
-    "type": 0,
+    "recipient": 0,
     "message": "Test message Test message Test message Test message Test message Test message Test message Test message Test message Test message Test message Test message Test message Test message Test message Test message ",
     "time": 1623598074733
   },
   {
     "id": 29,
     "userId": 1,
-    "type": 0,
+    "recipient": 0,
     "message": "2 Test message",
     "time": 1623598074867
   },
   {
     "id": 30,
     "userId": 1,
-    "type": 1,
+    "recipient": 1,
     "message": "25 Test message",
     "time": 1623598074868
   },
   {
     "id": 31,
     "userId": 1,
-    "type": 0,
+    "recipient": 0,
     "message": "26 Test message",
     "time": 16235980747869
   },
   {
     "id": 32,
     "userId": 1,
-    "type": 1,
+    "recipient": 1,
     "message": "27 Test message",
     "time": 1623598074870
   },
   {
     "id": 33,
     "userId": 1,
-    "type": 0,
+    "recipient": 0,
     "message": "28 Test message",
     "time": 1623598074871
   },
   {
     "id": 34,
     "userId": 1,
-    "type": 1,
+    "recipient": 1,
     "message": "3 Test message",
     "time": 1623598021872
   },
   {
     "id": 35,
     "userId": 1,
-    "type": 0,
+    "recipient": 0,
     "message": "4 Test message",
     "time": 1623598021873
   },
   {
     "id": 36,
     "userId": 4,
-    "type": 0,
+    "recipient": 0,
     "message": "Test message",
     "time": 1623598021874
   },
   {
     "id": 37,
     "userId": 4,
-    "type": 1,
+    "recipient": 1,
     "message": "2 Test message",
     "time": 1623598024312
   },
   {
     "id": 38,
     "userId": 5,
-    "type": 1,
+    "recipient": 1,
     "message": "Test message",
     "time": 1623598024312
   }

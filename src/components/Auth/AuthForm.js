@@ -315,8 +315,9 @@ function AuthForm({ onAuth, type, isLoading, isError, ...props }) {
           />
 
           <ButtonLoading
-            btnType={authType ? "Sign up" : "Login"}
+            ariaLabel={authType ? "Sign up" : "Login"}
             loading={isLoading}
+            type="submit"
             disabled={(!formValid && authType) || isLoading}
           >
             {authType && !isLoading ? "Sign up" : !isLoading ? "Login" : null}

@@ -1,19 +1,22 @@
+import React from "react";
 import LoadingIndicator from "../LoadingIndicator/LoadingIndicator";
 import Button from "../Button/Button";
 
 export default function ButtonLoading({
-  btnType,
+  ariaLabel,
+  type,
   loading,
   children,
   disabled,
 }) {
   return (
     <Button
-      type="primary"
-      ariaLabel={btnType}
+      color="primary"
+      ariaLabel={ariaLabel}
       className="inline-flex items-center px-4"
       isLoading={loading}
       disabled={disabled}
+      type={type}
     >
       <LoadingIndicator
         show={loading}

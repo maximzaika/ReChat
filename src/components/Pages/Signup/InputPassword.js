@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from "react";
+import React, { Fragment, useState, useEffect } from "react";
 import InputVerify from "../../UI/InputVerify/InputVerify";
 import ConvertObjectToArray from "../../../shared/convertData";
 import * as colors from "../../../shared/colors";

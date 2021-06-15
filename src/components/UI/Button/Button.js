@@ -4,7 +4,8 @@ import "./Button.css";
 function Button({
   children,
   className,
-  type, //Default (null), Light, Dark, White
+  color, //Default (null), Light, Dark, White
+  type,
   ariaLabel,
   clicked,
   isLoading,
@@ -14,15 +15,16 @@ function Button({
   const disabledForced = disabled && !isLoading ? "disabled" : "";
   const customClass = className ? className : "";
   const disabledLoading = isLoading ? "loading" : "";
-  const btnType = type === undefined ? "primary" : type;
+  const btnColor = color === undefined ? "primary" : color;
   const customMarginPadding = marginPadding ? marginPadding : "py-2 px-6 my-4";
 
   return (
     <button
-      className={`btn ${customMarginPadding} ${btnType} ${disabledForced} ${disabledLoading} ${customClass}`}
+      className={`btn ${customMarginPadding} ${btnColor} ${disabledForced} ${disabledLoading} ${customClass}`}
       onClick={clicked}
       aria-label={ariaLabel}
       disabled={disabled}
+      type={type}
     >
       {children}
     </button>
