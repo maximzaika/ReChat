@@ -172,6 +172,12 @@ function Chat({ isAuth, authUserId, authUserFName, authUserSName }) {
       <div className="flex flex-col h-screen w-full bg-gray-800 border-r-2 border-black">
         <DivOverflowY className="flex flex-col-reverse pl-2 pr-4">
           {userMessages.map((message) => {
+            const date = new Date(message.timestamp);
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            const time = `${hours}:${minutes}`;
+            const incomingMessage = message.message.split("\n");
+
             const allMessagesClass = "p-2 rounded max-w-sm";
 
             // Identify who is the sender and who is the receiver
@@ -181,13 +187,6 @@ function Chat({ isAuth, authUserId, authUserFName, authUserSName }) {
               customMessageClass = "bg-gray-600";
             }
 
-            const date = new Date(message.timestamp);
-            const hours = date.getHours();
-            const minutes = date.getMinutes();
-            const time = `${hours}:${minutes}`;
-
-            let incomingMessage = message.message.split("\n");
-
             return (
               <div key={message.id} className="flex my-2">
                 <span
@@ -195,8 +194,10 @@ function Chat({ isAuth, authUserId, authUserFName, authUserSName }) {
                   onMouseEnter={(event) => onHoverShowTime(event, message.id)}
                   onMouseLeave={(event) => onHoverShowTime(event, message.id)}
                 >
-                  {incomingMessage.map((m) => (
-                    <p key={m}>{m}</p>
+                  {incomingMessage.map((m, i) => (
+                    <p key={i} className="m-0">
+                      {m.split(" ").join("") === "" ? "\u00a0\u00a0" : m}
+                    </p>
                   ))}
                 </span>
                 {message.showTime && (
