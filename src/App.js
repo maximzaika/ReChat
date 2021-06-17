@@ -23,6 +23,10 @@ const asyncLogin = lazy(() => {
   return import("./pages/Login");
 });
 
+const asyncChatUserMessages = lazy(() => {
+  return import("./components/Pages/Chat/ChatUserMessages");
+});
+
 function App({ isAuthenticated, onTryAutoSignup, ...props }) {
   const loadingAnimation = (
     <div className="fixed left-1/2 -ml-10 top-1/2 -mt-10">
@@ -48,6 +52,7 @@ function App({ isAuthenticated, onTryAutoSignup, ...props }) {
     routes = (
       <Switch>
         <Route path="/chat" component={asyncChat} />
+        {/*<Route path="/chat:id" component={asyncChatUserMessages} />*/}
         <Route path="/" exact component={asyncHome} />
         <Redirect to="/" />
       </Switch>
