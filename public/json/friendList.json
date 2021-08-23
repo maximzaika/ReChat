@@ -1,15 +1,26 @@
 
   [
-    { "id": 1,
+    { "id": "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
       "avatar": null,
-      "name": "Turki",
+      "name": "Valeriy",
+      "lastMessage": "Ok OK bos",
+      "time": "18:42"
+    },
+    {
+      "id": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "userId": "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
+      "avatar": null,
+      "name": "Maxim",
       "lastMessage": "Ok OK bos",
       "time": "18:42"
     },
     {
       "id": 2,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_2",
       "avatar": "Manu.jpg",
       "name": "Manu",
       "lastMessage": "How's things with you?",
@@ -18,6 +29,7 @@
     {
       "id": 3,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_3",
       "avatar": "Nikhi.jpg",
       "name": "Nikhi",
       "lastMessage": "Yeah, put a mil and wait",
@@ -26,6 +38,7 @@
     {
       "id": 4,
       "userId": 2,
+      "uniqueId": "2_4",
       "avatar": null,
       "name": "Max",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -34,6 +47,7 @@
     {
       "id": 5,
       "userId": 2,
+      "uniqueId": "2_5",
       "avatar": null,
       "name": "Kriss",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -42,6 +56,7 @@
     {
       "id": 6,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_6",
       "avatar": null,
       "name": "Evan",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -50,6 +65,7 @@
     {
       "id": 7,
       "userId": 3,
+      "uniqueId": "3_7",
       "avatar": null,
       "name": "Valeriy",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -58,6 +74,7 @@
     {
       "id": 8,
       "userId": 4,
+      "uniqueId": "4_8",
       "avatar": null,
       "name": "Alena",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -66,6 +83,7 @@
     {
       "id": 9,
       "userId": 4,
+      "uniqueId": "4_9",
       "avatar": null,
       "name": "Karina",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -74,6 +92,7 @@
     {
       "id": 10,
       "userId": 4,
+      "uniqueId": "4_10",
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -82,6 +101,7 @@
     {
       "id": 11,
       "userId": 4,
+      "uniqueId": "4_11",
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -90,6 +110,7 @@
     {
       "id": 12,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_12",
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -98,6 +119,7 @@
     {
       "id": 13,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_13",
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -106,6 +128,7 @@
     {
       "id": 14,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_14",
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -114,6 +137,7 @@
     {
       "id": 15,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_15",
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -122,6 +146,7 @@
     {
       "id": 16,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_16",
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -130,6 +155,7 @@
     {
       "id": 17,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_17",
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -138,6 +164,7 @@
     {
       "id": 18,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_18",
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -146,6 +173,7 @@
     {
       "id": 19,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_19",
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -154,6 +182,7 @@
     {
       "id": 20,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_20",
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -162,6 +191,7 @@
     {
       "id": 21,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_21",
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -170,6 +200,7 @@
     {
       "id": 22,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+      "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_22",
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -178,6 +209,7 @@
     {
       "id": 23,
       "userId": 3,
+      "uniqueId": "3_23",
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -186,6 +218,7 @@
     {
       "id": 24,
       "userId": 3,
+      "uniqueId": "3_24",
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -194,6 +227,7 @@
     {
       "id": 25,
       "userId": 3,
+      "uniqueId": "3_25",
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -202,6 +236,7 @@
     {
       "id": 26,
       "userId": 3,
+      "uniqueId": "3_26",
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -210,6 +245,7 @@
     {
       "id": 27,
       "userId": 3,
+      "uniqueId": "3_27",
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -218,6 +254,7 @@
     {
       "id": 28,
       "userId": 3,
+      "uniqueId": "3_28",
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -226,6 +263,7 @@
     {
       "id": 29,
       "userId": 3,
+      "uniqueId": "3_29",
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -234,6 +272,7 @@
     {
       "id": 30,
       "userId": 3,
+      "uniqueId": "3_30",
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",

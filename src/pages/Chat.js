@@ -58,7 +58,13 @@ function Chat({
     setFetchedFriends(tempUsers);
   };
 
-  const onSubmitMessageHandler = (event, message, senderId, recipientId) => {
+  const onSubmitMessageHandler = (
+    event,
+    message,
+    uniqueId,
+    senderId,
+    recipientId
+  ) => {
     if ((event.which !== 13 || event.shiftKey) && event.type !== "submit")
       return;
 
@@ -86,20 +92,26 @@ function Chat({
   };
 
   useEffect(() => {
+    console.log(socket);
     socket.on("message", (data) => {
+      console.log(socket);
       console.log(data);
     });
   }, [socket]);
 
-  const onClickDisplayMessagesHandler = (userId, index) => {
+  const onClickDisplayMessagesHandler = (userId, index, uniqueId) => {
     // if no users fetched or user's chat is already active
     // then avoid fetching / re-rendering again
-    if (fetchedFriends.length < 0 || isActiveChat === userId) {
+    if (fetchedFriends.length < 0 || isActiveChat === userId || !uniqueId) {
       return;
     }
 
+    console.log(userId);
+    console.log(index);
+    console.log(uniqueId);
+
     if (userId || userId !== "") {
-      socket.emit("joinRoom", { userId });
+      socket.emit("joinRoom", { username: userId, uniqueId: uniqueId });
     }
 
     // match clicked user with their message && ensure that
@@ -155,7 +167,11 @@ function Chat({
                         : ""
                     } hover:bg-gray-700`}
                     onClick={() =>
-                      onClickDisplayMessagesHandler(friend.id, index)
+                      onClickDisplayMessagesHandler(
+                        friend.id,
+                        index,
+                        friend.uniqueId
+                      )
                     }
                   >
                     <div className="flex py-2 gap-4">
@@ -224,6 +240,7 @@ function Chat({
               onSubmitMessageHandler(
                 event,
                 fetchedFriends[indexOfActiveChat].inputMessage,
+                fetchedFriends[indexOfActiveChat].uniqueId,
                 authUserId,
                 isActiveChat
               )

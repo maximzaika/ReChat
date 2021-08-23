@@ -1,15 +1,15 @@
 const connectedUsers = [];
 
 // called when user decides to join the chatroom
-const joinedUsersHandler = (id, username) => {
-  const user = { id, username };
-  if (connectedUsers.find((user) => user.id === id)) {
-    console.log("connected existing user:", user);
-    return { type: 1, data: user };
+const joinedUsersHandler = (id, username, room) => {
+  const user = { id, username, room };
+  if (connectedUsers.find((user) => user.id === id && user.room === room)) {
+    console.log("existing user > ", user);
+    return { new: false, data: user };
   }
+  console.log("new user > ", user);
   connectedUsers.push(user);
-  console.log(connectedUsers, "users");
-  return { type: 0, data: user };
+  return { new: true, data: user };
 };
 
 console.log("user out", connectedUsers);

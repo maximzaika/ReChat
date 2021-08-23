@@ -37,6 +37,6 @@ Button.propTypes = {
   className: PropTypes.string,
   ariaLabel: PropTypes.string,
   isLoading: PropTypes.bool,
-  color: PropTypes.oneOf(["Light", "Dark", "White", undefined]),
+  color: PropTypes.oneOf(["primary", "Light", "Dark", "White", undefined]),
   disabled: PropTypes.bool,
 };

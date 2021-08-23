@@ -26,16 +26,16 @@ const io = socket(server);
 io.on("connection", (socket) => {
   // new user joins
   // socket.on("joinRoom", ({ username, roomname }) => {
-  socket.on("joinRoom", ({ username }) => {
+  socket.on("joinRoom", ({ username, uniqueId }) => {
     // onJoinCreateUser
     // const user = joinedUsersHandler(socket.id, username, roomname);
-    const user = joinedUsersHandler(socket.id, username);
+    const user = joinedUsersHandler(socket.id, username, uniqueId);
 
-    // if this is a new user
-    if (user.type === 1) {
-      socket.join(user.room);
+    // if new user
+    if (user.new) {
+      socket.join(user.data.room);
 
-      // onJoinShowWelcomeMessage
+      // onJoinShowWelcomeMessageToJoinedUser
       socket.emit("message", {
         userId: user.data.id,
         username: user.data.username,
@@ -44,7 +44,7 @@ io.on("connection", (socket) => {
     }
 
     // onJoinNotifyOtherUsers
-    socket.broadcast.to(user.room).emit("message", {
+    socket.broadcast.to(user.data.room).emit("message", {
       userId: user.data.id,
       username: user.data.username,
       text: `${user.data.username} has joined the chat`,
@@ -54,6 +54,7 @@ io.on("connection", (socket) => {
   // onUserSendMessage
   socket.on("chat", (text) => {
     const user = getUserHandler(socket.id);
+    console.log("user message > ", user);
 
     io.to(user.room).emit("message", {
       userId: user.id,
