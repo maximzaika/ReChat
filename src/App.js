@@ -1,28 +1,24 @@
-import React, { Suspense, lazy, Fragment, useEffect } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { Route, Switch, withRouter, Redirect } from "react-router-dom";
 import { connect } from "react-redux";
+import * as actions from "./store/actions";
 
 import Layout from "./hoc/Layout/Layout";
 import LoadingIndicator from "./components/UI/LoadingIndicator/LoadingIndicator";
-import * as actions from "./store/actions";
 
 // Async/Lazy loaded Routes
 const asyncHome = lazy(() => {
   return import("./pages/Home");
 });
-
 const asyncChat = lazy(() => {
   return import("./pages/Chat");
 });
-
 const asyncSignup = lazy(() => {
   return import("./pages/Signup");
 });
-
 const asyncLogin = lazy(() => {
   return import("./pages/Login");
 });
-
 const asyncChatUserMessages = lazy(() => {
   return import("./components/Pages/Chat/ChatUserMessages");
 });
@@ -60,11 +56,9 @@ function App({ isAuthenticated, onTryAutoSignup, ...props }) {
   }
 
   return (
-    <Fragment>
-      <Layout>
-        <Suspense fallback={loadingAnimation}>{routes}</Suspense>
-      </Layout>
-    </Fragment>
+    <Layout>
+      <Suspense fallback={loadingAnimation}>{routes}</Suspense>
+    </Layout>
   );
 }
 

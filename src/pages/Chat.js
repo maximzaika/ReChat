@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
 import { useHistory } from "react-router";
+import * as actions from "../store/actions";
+import { toDecrypt, toEncrypt } from "../shared/aes";
 
 import HorizontalLine from "../components/UI/HorizontalLine/HorizontalLine";
 import useFetchJson from "../hooks/useFetchJson";
@@ -12,7 +14,17 @@ import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
 
-function Chat({ isAuth, authUserId, authUserFName, authUserSName }) {
+import io from "socket.io-client";
+
+const socket = io.connect("/");
+
+function Chat({
+  isAuth,
+  authUserId,
+  authUserFName,
+  authUserSName,
+  socketProcess,
+}) {
   const [fetchedFriends, setFetchedFriends] = useFetchJson(
     "./json/friendList.json",
     ["inputMessage", "userColor"],
@@ -47,9 +59,9 @@ function Chat({ isAuth, authUserId, authUserFName, authUserSName }) {
   };
 
   const onSubmitMessageHandler = (event, message, senderId, recipientId) => {
-    if ((event.which !== 13 || event.shiftKey) && event.type !== "submit") {
+    if ((event.which !== 13 || event.shiftKey) && event.type !== "submit")
       return;
-    }
+
     event.preventDefault();
     const strippedMessage = message.split(" ").join("").split("\n").join("");
     if (!strippedMessage.length || !senderId || !recipientId) return;
@@ -63,6 +75,8 @@ function Chat({ isAuth, authUserId, authUserFName, authUserSName }) {
     };
 
     setUserMessages((prevState) => [messagePayload, ...prevState]);
+    const encryptedMessage = toEncrypt(message);
+    socket.emit("chat", encryptedMessage);
 
     // reset input form
     onInputMessageHandler("");
@@ -71,11 +85,21 @@ function Chat({ isAuth, authUserId, authUserFName, authUserSName }) {
     setId((prevState) => prevState + 1);
   };
 
+  useEffect(() => {
+    socket.on("message", (data) => {
+      console.log(data);
+    });
+  }, [socket]);
+
   const onClickDisplayMessagesHandler = (userId, index) => {
-    // if no users fetched or user's chat is already active\
+    // if no users fetched or user's chat is already active
     // then avoid fetching / re-rendering again
     if (fetchedFriends.length < 0 || isActiveChat === userId) {
       return;
+    }
+
+    if (userId || userId !== "") {
+      socket.emit("joinRoom", { userId });
     }
 
     // match clicked user with their message && ensure that
@@ -186,12 +210,12 @@ function Chat({ isAuth, authUserId, authUserFName, authUserSName }) {
 
         <MyLink path={"/chat/" + "2"}>Go Next</MyLink>
 
-        {/*<ChatUserMessages
+        <ChatUserMessages
           isActiveChat={isActiveChat}
           messages={userMessages}
           authUserId={authUserId}
           setMessages={(messages) => setUserMessages(messages)}
-        />*/}
+        />
 
         {indexOfActiveChat !== null && (
           <form
@@ -237,4 +261,11 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps, null)(Chat);
+const mapDispatchToProps = (dispatch) => {
+  return {
+    socketProcess: (encrypt, msg, cipher) =>
+      dispatch(actions.socketProcess(encrypt, msg, cipher)),
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Chat);

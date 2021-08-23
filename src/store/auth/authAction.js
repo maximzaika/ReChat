@@ -6,13 +6,13 @@ const firebaseUrl = "https://identitytoolkit.googleapis.com/v1/accounts:";
 const authSignUp = "signUp?key=";
 const authSigIn = "signInWithPassword?key=";
 
-export const authStart = () => {
+const authStart = () => {
   return {
     type: actions.AUTH_START,
   };
 };
 
-export const authSuccess = (token, userId, expiresIn, firstName, surName) => {
+const authSuccess = (token, userId, expiresIn, firstName, surName) => {
   Cookies.set("token", token, { expires: expiresIn });
   Cookies.set("userId", userId, { expires: expiresIn });
   Cookies.set("firstName", firstName, { expires: expiresIn });
@@ -27,7 +27,7 @@ export const authSuccess = (token, userId, expiresIn, firstName, surName) => {
   };
 };
 
-export const authFail = (errorType) => {
+const authFail = (errorType) => {
   console.log(errorType);
   let errorMessage = "";
   switch (errorType) {
@@ -155,7 +155,7 @@ export const auth = (email, password, isToSignUp, firstName, surName) => {
 
         if (isToSignUp) {
           authSQL(
-            "http://192.168.0.158/rechat/php/Users/post.php",
+            "http://192.168.0.157/rechat/php/Users/post.php",
             idToken,
             expiresIn,
             localId,
@@ -166,7 +166,7 @@ export const auth = (email, password, isToSignUp, firstName, surName) => {
           );
         } else {
           authSQL(
-            "http://192.168.0.158/rechat/php/Users/fetch.php",
+            "http://192.168.0.157/rechat/php/Users/fetch.php",
             idToken,
             expiresIn,
             localId,

@@ -1,3 +1,6 @@
-.ButtonIcon svg {
-  @apply w-6 h-6 fill-current text-white align-middle;
+@layer components {
+  .ButtonIcon svg {
+    @apply w-6 h-6 fill-current text-white align-middle;
+  }
 }
+

@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { connect } from "react-redux";
+
 import * as actions from "../store/actions";
 
 import MyLink from "../components/UI/MyLink/MyLink";
@@ -13,7 +14,9 @@ function Home({ isAuthenticated, firstName, onLogoutClick }) {
       {isAuthenticated && (
         <Fragment>
           <p>Welcome back, {firstName}!</p>
-          <Button clicked={onLogoutClick}>Logout</Button>
+          <Button type="button" clicked={onLogoutClick}>
+            Logout
+          </Button>
         </Fragment>
       )}
     </div>

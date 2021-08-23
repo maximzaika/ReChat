@@ -1,26 +1,24 @@
 import React from "react";
+import PropTypes from "prop-types";
 import "./Button.css";
 
-function Button({
-  children,
-  className,
-  color, //Default (null), Light, Dark, White
+export default function Button({
   type,
+  children,
+  className = "",
+  marginPadding = "py-2 px-6 my-4",
+  color = "primary",
   ariaLabel,
-  clicked,
   isLoading,
+  clicked,
   disabled,
-  marginPadding,
 }) {
   const disabledForced = disabled && !isLoading ? "disabled" : "";
-  const customClass = className ? className : "";
-  const disabledLoading = isLoading ? "loading" : "";
-  const btnColor = color === undefined ? "primary" : color;
-  const customMarginPadding = marginPadding ? marginPadding : "py-2 px-6 my-4";
+  const whileLoading = isLoading ? "loading" : "";
 
   return (
     <button
-      className={`btn ${customMarginPadding} ${btnColor} ${disabledForced} ${disabledLoading} ${customClass}`}
+      className={`btn ${marginPadding} ${color} ${disabledForced} ${whileLoading} ${className}`}
       onClick={clicked}
       aria-label={ariaLabel}
       disabled={disabled}
@@ -31,4 +29,14 @@ function Button({
   );
 }
 
-export default Button;
+Button.propTypes = {
+  children: PropTypes.node.isRequired,
+  type: PropTypes.oneOf(["submit", "reset", "button", undefined]).isRequired,
+  clicked: PropTypes.any,
+  marginPadding: PropTypes.string,
+  className: PropTypes.string,
+  ariaLabel: PropTypes.string,
+  isLoading: PropTypes.bool,
+  color: PropTypes.oneOf(["Light", "Dark", "White", undefined]),
+  disabled: PropTypes.bool,
+};
