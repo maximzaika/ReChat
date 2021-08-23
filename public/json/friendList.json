@@ -18,6 +18,24 @@
       "time": "18:42"
     },
     {
+      "id": "oymVbduXBQWWUeyPAeQDPYpzaih2",
+      "userId": "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
+      "uniqueId": "oymVbduXBQWWUeyPAeQDPYpzaih2_wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
+      "avatar": null,
+      "name": "Test",
+      "lastMessage": "Ok OK bos",
+      "time": "18:42"
+    },
+    {
+      "id": "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
+      "userId": "oymVbduXBQWWUeyPAeQDPYpzaih2",
+      "uniqueId": "oymVbduXBQWWUeyPAeQDPYpzaih2_wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
+      "avatar": null,
+      "name": "Valeriy",
+      "lastMessage": "Ok OK bos",
+      "time": "18:42"
+    },
+    {
       "id": 2,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
       "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_2",

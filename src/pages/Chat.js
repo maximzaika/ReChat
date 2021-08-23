@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { connect } from "react-redux";
 import { useHistory } from "react-router";
 import * as actions from "../store/actions";
+import io from "socket.io-client";
+import * as socketIoActions from "../shared/socketIoActionTypes";
 import { toDecrypt, toEncrypt } from "../shared/aes";
 
 import HorizontalLine from "../components/UI/HorizontalLine/HorizontalLine";
@@ -13,8 +15,7 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
-
-import io from "socket.io-client";
+import { SEND_MESSAGE } from "../shared/socketIoActionTypes";
 
 const socket = io.connect("/");
 
@@ -38,6 +39,7 @@ function Chat({
   const [userMessages, setUserMessages] = useState([]);
   const [isActiveChat, setIsActiveChat] = useState(null);
   const [indexOfActiveChat, setIndexOfActiveChat] = useState(null);
+  const [connectedUsers, setConnectedUsers] = useState([]);
   const history = useHistory();
 
   useEffect(() => {
@@ -82,7 +84,10 @@ function Chat({
 
     setUserMessages((prevState) => [messagePayload, ...prevState]);
     const encryptedMessage = toEncrypt(message);
-    socket.emit("chat", encryptedMessage);
+    socket.emit(socketIoActions.sendMessage, {
+      recipientId: recipientId,
+      message: encryptedMessage,
+    });
 
     // reset input form
     onInputMessageHandler("");
@@ -91,27 +96,54 @@ function Chat({
     setId((prevState) => prevState + 1);
   };
 
-  useEffect(() => {
-    console.log(socket);
-    socket.on("message", (data) => {
-      console.log(socket);
+  const test = useCallback(
+    (data) => {
+      if (data.recipientId !== authUserId) return;
       console.log(data);
-    });
-  }, [socket]);
+      const tempConnectedUsers = [...connectedUsers];
+      const connectedUser = tempConnectedUsers.findIndex(
+        (user) => user === data.senderId
+      );
 
-  const onClickDisplayMessagesHandler = (userId, index, uniqueId) => {
+      console.log(tempConnectedUsers);
+      console.log(connectedUser);
+
+      if (connectedUser === -1 && data.online) {
+        setConnectedUsers((prevState) => [...prevState, data.senderId]);
+      }
+
+      if (connectedUser > -1 && !data.online) {
+        setConnectedUsers(tempConnectedUsers.splice(connectedUser, 0));
+      }
+    },
+    [connectedUsers]
+  );
+
+  useEffect(() => {
+    socket.on(socketIoActions.onlineStatus, (data) => {
+      console.log("test");
+      test(data);
+    });
+  }, [socket, test]);
+
+  console.log(connectedUsers);
+
+  const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
     // if no users fetched or user's chat is already active
     // then avoid fetching / re-rendering again
-    if (fetchedFriends.length < 0 || isActiveChat === userId || !uniqueId) {
+    if (fetchedFriends.length < 0 || isActiveChat === recipientId || !uniqueId)
       return;
-    }
 
-    console.log(userId);
-    console.log(index);
-    console.log(uniqueId);
+    if (recipientId || recipientId !== "") {
+      socket.emit(socketIoActions.joinRoom, {
+        recipientId: recipientId,
+        roomId: uniqueId,
+      });
 
-    if (userId || userId !== "") {
-      socket.emit("joinRoom", { username: userId, uniqueId: uniqueId });
+      if (isActiveChat) {
+        console.log("closed chat >", isActiveChat);
+        socket.emit(socketIoActions.disconnectRoom, isActiveChat);
+      }
     }
 
     // match clicked user with their message && ensure that
@@ -119,7 +151,8 @@ function Chat({
     const messagesArr = [];
     for (let message of fetchedUserMessages) {
       if (
-        (message.senderId === userId || message.recipientId === userId) &&
+        (message.senderId === recipientId ||
+          message.recipientId === recipientId) &&
         (message.senderId === authUserId || message.recipientId === authUserId)
       ) {
         messagesArr.push(message);
@@ -131,9 +164,9 @@ function Chat({
     );
 
     setUserMessages(sortedMessages);
-    setIsActiveChat(userId);
+    setIsActiveChat(recipientId);
     setIndexOfActiveChat(index);
-    history.push("/chat/" + userId);
+    history.push("/chat/" + recipientId);
   };
 
   return (
