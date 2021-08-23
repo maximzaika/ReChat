@@ -21,7 +21,9 @@ export default function useFetchJson(url, addExtraObject, isAuth) {
       .then((json) => {
         if (addExtraObject) {
           for (let d in json) {
-            json[d][addExtraObject] = "";
+            for (let extra in addExtraObject) {
+              json[d][extra] = "";
+            }
           }
         }
 

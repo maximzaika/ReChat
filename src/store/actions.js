@@ -5,3 +5,5 @@ export {
   authReset,
   setAuthRedirectPath,
 } from "./auth/authAction";
+
+export { socketProcess } from "./socket/socketAction";
