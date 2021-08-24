@@ -36,11 +36,11 @@ io.on(actions.connection, (socket) => {
     if (user.new) {
       socket.join(user.data.roomId);
 
-      socket.emit(actions.message, {
-        socketId: user.data.socketId,
-        recipientId: user.data.recipientId,
-        message: `Welcome ${user.data.socketId}`,
-      });
+      // socket.emit(actions.message, {
+      //   socketId: user.data.socketId,
+      //   recipientId: user.data.recipientId,
+      //   message: `Welcome ${user.data.socketId}`,
+      // });
     }
 
     if (userOnline) {
@@ -63,18 +63,24 @@ io.on(actions.connection, (socket) => {
     });
   });
 
-  socket.on(actions.sendMessage, ({ recipientId, message }) => {
-    const user = getUserHandler(socket.id, recipientId);
+  socket.on(
+    actions.sendMessage,
+    ({ senderId, recipientId, timestamp, message }) => {
+      const user = getUserHandler(socket.id, recipientId);
 
-    io.to(user.roomId).emit(actions.message, {
-      socketId: user.socketId,
-      recipientId: user.recipientId,
-      message: message,
-    });
-  });
+      if (user) {
+        io.to(user.roomId).emit(actions.message, {
+          senderId: senderId,
+          recipientId: user.recipientId,
+          timestamp: timestamp,
+          message: message,
+        });
+      }
+    }
+  );
 
-  socket.on(actions.disconnectRoom, ({ userId, recipientId }) => {
-    const user = disconnectRoomHandler(socket.id, userId, recipientId);
+  socket.on(actions.disconnectRoom, () => {
+    const user = disconnectUserHandler(socket.id);
 
     if (user) {
       io.to(user.roomId).emit(actions.onlineStatus, {

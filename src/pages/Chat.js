@@ -63,7 +63,7 @@ function Chat({
     event,
     message,
     uniqueId,
-    socketId,
+    senderId,
     recipientId
   ) => {
     if ((event.which !== 13 || event.shiftKey) && event.type !== "submit")
@@ -71,20 +71,22 @@ function Chat({
 
     event.preventDefault();
     const strippedMessage = message.split(" ").join("").split("\n").join("");
-    if (!strippedMessage.length || !socketId || !recipientId) return;
+    if (!strippedMessage.length || !senderId || !recipientId) return;
 
-    const messagePayload = {
-      id: id,
-      socketId: socketId,
-      recipientId: recipientId,
-      timestamp: new Date().getTime(),
-      message: message,
-    };
-
-    setUserMessages((prevState) => [messagePayload, ...prevState]);
+    // const messagePayload = {
+    //   // id: id,
+    //   senderId: senderId,
+    //   recipientId: recipientId,
+    //   timestamp: new Date().getTime(),
+    //   message: message,
+    // };
+    //
+    // setUserMessages((prevState) => [messagePayload, ...prevState]);
     const encryptedMessage = toEncrypt(message);
     socket.emit(socketIoActions.sendMessage, {
+      senderId: senderId,
       recipientId: recipientId,
+      timestamp: new Date().getTime(),
       message: encryptedMessage,
     });
 
@@ -92,7 +94,7 @@ function Chat({
     onInputMessageHandler("");
 
     //-----------temporary message id (must be handled by backend) -----------
-    setId((prevState) => prevState + 1);
+    // setId((prevState) => prevState + 1);
   };
 
   const connectedUsersRef = useRef(connectedUsers);
@@ -103,33 +105,51 @@ function Chat({
   }, [connectedUsers]);
 
   useEffect(() => {
-    socket.on(socketIoActions.onlineStatus, (data) => {
-      if (data.recipientId !== authUserId) return;
-      const _connectedUsers = [...connectedUsersRef.current];
-      const indexConnectedUser = _connectedUsers.findIndex(
-        (user) => user.socketId === data.socketId && user.userId === data.userId
-      );
+    socket.on(
+      socketIoActions.onlineStatus,
+      ({ recipientId, socketId, userId, online }) => {
+        if (recipientId !== authUserId) return;
+        const _connectedUsers = [...connectedUsersRef.current];
+        const indexConnectedUser = _connectedUsers.findIndex(
+          (user) => user.socketId === socketId && user.userId === userId
+        );
 
-      // If user goes online
-      if (indexConnectedUser === -1 && data.online) {
-        const newConnectedUsers = [
-          ..._connectedUsers,
-          {
-            userId: data.userId,
-            socketId: data.socketId,
-          },
-        ];
-        setConnectedUsers(newConnectedUsers);
+        // If user goes online
+        if (indexConnectedUser === -1 && online) {
+          const newConnectedUsers = [
+            ..._connectedUsers,
+            {
+              userId: userId,
+              socketId: socketId,
+            },
+          ];
+          setConnectedUsers(newConnectedUsers);
+        }
+
+        // if user goes offline
+        if (indexConnectedUser > -1 && !online) {
+          setConnectedUsers([
+            ..._connectedUsers.slice(0, indexConnectedUser),
+            ..._connectedUsers.slice(indexConnectedUser + 1),
+          ]);
+        }
       }
+    );
 
-      // if user goes offline
-      if (indexConnectedUser > -1 && !data.online) {
-        setConnectedUsers([
-          ..._connectedUsers.slice(0, indexConnectedUser),
-          ..._connectedUsers.slice(indexConnectedUser + 1),
+    socket.on(
+      socketIoActions.message,
+      ({ senderId, recipientId, timestamp, message }) => {
+        setUserMessages((prevState) => [
+          {
+            senderId: senderId,
+            recipientId: recipientId,
+            timestamp: timestamp,
+            message: toDecrypt(message),
+          },
+          ...prevState,
         ]);
       }
-    });
+    );
   }, [socket]);
 
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
@@ -146,22 +166,22 @@ function Chat({
       });
 
       if (isActiveChat) {
-        console.log("closed chat >", isActiveChat);
-        socket.emit(socketIoActions.disconnectRoom, {
-          userId: authUserId,
-          recipientId: isActiveChat,
-        });
+        socket.emit(socketIoActions.disconnectRoom);
       }
     }
+
+    console.log(fetchedUserMessages);
+    console.log(authUserId);
+    console.log(recipientId);
 
     // match clicked user with their message && ensure that
     // authenticated user receives their messages ONLY
     const messagesArr = [];
     for (let message of fetchedUserMessages) {
       if (
-        (message.socketId === recipientId ||
+        (message.senderId === recipientId ||
           message.recipientId === recipientId) &&
-        (message.socketId === authUserId || message.recipientId === authUserId)
+        (message.senderId === authUserId || message.recipientId === authUserId)
       ) {
         messagesArr.push(message);
       }
@@ -260,17 +280,17 @@ function Chat({
               textClass="h-12 w-12"
               userColor={fetchedFriends[indexOfActiveChat].userColor}
             />
-            <div className="flex">
-              <p className="m-0 font-semibold">
+            <div className="flex flex-col justify-center">
+              <h1 className="m-0 font-semibold text-base my-0">
                 {fetchedFriends[indexOfActiveChat].name}
-              </p>
-              <div>
+              </h1>
+              <h2 className="italic font-normal text-sm my-0">
                 {connectedUsers.find(
                   (user) => user.userId === fetchedFriends[indexOfActiveChat].id
                 )
-                  ? "Online"
-                  : "Offline"}
-              </div>
+                  ? "Online now"
+                  : "Last seen - August 24th at 17:03"}
+              </h2>
             </div>
           </div>
         )}
@@ -305,6 +325,7 @@ function Chat({
                 onSubmitMessageHandler(
                   event,
                   fetchedFriends[indexOfActiveChat].inputMessage,
+                  fetchedFriends[indexOfActiveChat].uniqueId,
                   authUserId,
                   isActiveChat
                 )

@@ -33,19 +33,17 @@ export default function ChatUserMessages({
             const time = `${hours}:${minutes}`;
             const incomingMessage = message.message.split("\n");
 
-            const allMessagesClass = "p-2 rounded max-w-sm";
-
-            // Identify who is the sender and who is the receiver
-            // Receiver is set by default
+            // Sent messages are always on the right
+            // while received messages are always on the left
             let customMessageClass = "ml-auto bg-p-dark";
-            if (message.senderId === authUserId) {
+            if (message.recipientId === authUserId) {
               customMessageClass = "bg-gray-600";
             }
 
             return (
-              <div key={message.id} className="flex my-2">
+              <div key={index} className="flex my-2">
                 <span
-                  className={`${allMessagesClass} ${customMessageClass} cursor-pointer fe`}
+                  className={`p-2 rounded max-w-sm ${customMessageClass} cursor-pointer fe`}
                   onMouseEnter={(event) => onHoverShowTime(event, index)}
                   onMouseLeave={(event) => onHoverShowTime(event, index)}
                 >
