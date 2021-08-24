@@ -1,11 +1,12 @@
 const connectedUsers = [];
 
 // called when user decides to join the chatroom
-const joinedUsersHandler = (senderId, recipientId, roomId) => {
-  const user = { senderId, recipientId, roomId };
+const joinedUserHandler = (socketId, userId, recipientId, roomId) => {
+  const user = { socketId, userId, recipientId, roomId };
   const isConnected = connectedUsers.find(
     (user) =>
-      user.senderId === senderId &&
+      user.socketId === socketId &&
+      user.userId === userId &&
       user.recipientId === recipientId &&
       user.roomId === roomId
   );
@@ -17,39 +18,40 @@ const joinedUsersHandler = (senderId, recipientId, roomId) => {
   return { new: true, data: user };
 };
 
-console.log("user out", connectedUsers);
-
-// received user's id to return the current user
-const getUserHandler = (senderId, recipientId) => {
+const joinedUsersHandler = (socketId, roomId) => {
   return connectedUsers.find(
-    (user) => user.senderId === senderId && user.recipientId === recipientId
+    (user) => user.socketId !== socketId && user.roomId === roomId
   );
 };
 
-const disconnectRoomHandler = (senderId, recipientId) => {
+console.log("user out", connectedUsers);
+
+// received user's id to return the current user
+const getUserHandler = (socketId, recipientId) => {
   return connectedUsers.find(
-    (user) => user.senderId === senderId && user.recipientId === recipientId
+    (user) => user.socketId === socketId && user.recipientId === recipientId
+  );
+};
+
+const disconnectRoomHandler = (socketId, userId, recipientId) => {
+  return connectedUsers.find(
+    (user) =>
+      user.socketId === socketId &&
+      user.userId === userId &&
+      user.recipientId === recipientId
   );
 };
 
 // called when the user leaves the chat and its object gets deleted from the array
 const disconnectUserHandler = (disconnectedUser) => {
-  // const disconnected = [];
-  // for (let i = 0; i < connectedUsers.length; i++) {
-  //   console.log(connectedUsers[i].senderId);
-  //   if (connectedUsers[i].senderId === disconnectedUser) {
-  //     disconnected.push(connectedUsers[i]);
-  //   }
-  // }
-  // return disconnected;
-
   const index = connectedUsers.findIndex(
-    (user) => user.senderId === disconnectedUser
+    (user) => user.socketId === disconnectedUser
   );
   if (index !== -1) return connectedUsers.splice(index, 1)[0];
 };
 
 module.exports = {
+  joinedUserHandler,
   joinedUsersHandler,
   getUserHandler,
   disconnectRoomHandler,
