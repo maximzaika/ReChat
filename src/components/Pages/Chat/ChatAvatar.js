@@ -34,7 +34,7 @@ export default function ChatAvatar({
         />
       ) : (
         <div
-          className={`${textClass} ${bgColors} rounded-full flex justify-center align-middle`}
+          className={`rounded-full flex justify-center align-middle ${textClass} ${bgColors}`}
         >
           <h2 className="text-3xl text-white mt-auto mb-auto">
             {friendName[0].toUpperCase()}

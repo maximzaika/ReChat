@@ -4,7 +4,7 @@ export default function TextArea({ placeholder, changed, value, keyPressed }) {
   const initialClass = "block w-full px-2 py-1.5";
 
   const onInputResize = (event) => {
-    console.log(event);
+    // console.log(event);
     const target = event.target;
 
     if (event.target.scrollHeight < 132) {

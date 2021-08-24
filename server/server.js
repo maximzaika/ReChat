@@ -4,10 +4,13 @@ const socket = require("socket.io");
 const color = require("colors");
 const cors = require("cors");
 const {
-  disconnectUserHandler,
-  getUserHandler,
+  joinedUserHandler,
   joinedUsersHandler,
+  getUserHandler,
+  disconnectRoomHandler,
+  disconnectUserHandler,
 } = require("./dummyuser");
+const actions = require("./socketIoActionTypes");
 
 app.use(express());
 
@@ -22,53 +25,83 @@ let server = app.listen(
 
 const io = socket(server);
 
-// init the socket io connection
-io.on("connection", (socket) => {
-  // new user joins
-  // socket.on("joinRoom", ({ username, roomname }) => {
-  socket.on("joinRoom", ({ username }) => {
-    // onJoinCreateUser
-    // const user = joinedUsersHandler(socket.id, username, roomname);
-    const user = joinedUsersHandler(socket.id, username);
+io.on(actions.connection, (socket) => {
+  socket.on(actions.joinRoom, ({ userId, recipientId, roomId }) => {
+    // creates unique socket id of the connected user
+    const userOnline = joinedUsersHandler(socket.id, roomId);
+    const user = joinedUserHandler(socket.id, userId, recipientId, roomId);
 
-    // if this is a new user
-    if (user.type === 1) {
-      socket.join(user.room);
+    console.log("user online> ", userOnline);
 
-      // onJoinShowWelcomeMessage
-      socket.emit("message", {
-        userId: user.data.id,
-        username: user.data.username,
-        text: `Welcome ${user.data.username}`,
+    if (user.new) {
+      socket.join(user.data.roomId);
+
+      // socket.emit(actions.message, {
+      //   socketId: user.data.socketId,
+      //   recipientId: user.data.recipientId,
+      //   message: `Welcome ${user.data.socketId}`,
+      // });
+    }
+
+    if (userOnline) {
+      socket.emit(actions.onlineStatus, {
+        userId: userOnline.userId,
+        socketId: userOnline.socketId,
+        recipientId: userOnline.recipientId,
+        online: true,
       });
     }
 
-    // onJoinNotifyOtherUsers
-    socket.broadcast.to(user.room).emit("message", {
-      userId: user.data.id,
-      username: user.data.username,
-      text: `${user.data.username} has joined the chat`,
+    console.log("connected user > ", user);
+
+    // If user has opened the chat, it would show their online status
+    socket.broadcast.to(user.data.roomId).emit(actions.onlineStatus, {
+      userId: user.data.userId,
+      socketId: user.data.socketId,
+      recipientId: user.data.recipientId,
+      online: true,
     });
   });
 
-  // onUserSendMessage
-  socket.on("chat", (text) => {
-    const user = getUserHandler(socket.id);
+  socket.on(
+    actions.sendMessage,
+    ({ senderId, recipientId, timestamp, message }) => {
+      const user = getUserHandler(socket.id, recipientId);
 
-    io.to(user.room).emit("message", {
-      userId: user.id,
-      username: user.username,
-      text: text,
-    });
+      if (user) {
+        io.to(user.roomId).emit(actions.message, {
+          senderId: senderId,
+          recipientId: user.recipientId,
+          timestamp: timestamp,
+          message: message,
+        });
+      }
+    }
+  );
+
+  socket.on(actions.disconnectRoom, () => {
+    const user = disconnectUserHandler(socket.id);
+
+    if (user) {
+      io.to(user.roomId).emit(actions.onlineStatus, {
+        userId: user.userId,
+        socketId: user.socketId,
+        recipientId: user.recipientId,
+        online: false,
+      });
+    }
   });
 
-  // onUserDisconnect
-  const user = disconnectUserHandler(socket.id);
-  if (user) {
-    io.to(user.room).emit("message", {
-      userId: user.id,
-      username: user.username,
-      text: `${user.username} has left the room`,
-    });
-  }
+  socket.on(actions.disconnect, () => {
+    const user = disconnectUserHandler(socket.id);
+
+    if (user) {
+      io.to(user.roomId).emit(actions.onlineStatus, {
+        userId: user.userId,
+        socketId: user.socketId,
+        recipientId: user.recipientId,
+        online: false,
+      });
+    }
+  });
 });

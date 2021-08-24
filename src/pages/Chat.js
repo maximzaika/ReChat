@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { connect } from "react-redux";
 import { useHistory } from "react-router";
 import * as actions from "../store/actions";
+import io from "socket.io-client";
+import * as socketIoActions from "../shared/socketIoActionTypes";
 import { toDecrypt, toEncrypt } from "../shared/aes";
 
 import HorizontalLine from "../components/UI/HorizontalLine/HorizontalLine";
@@ -13,8 +15,6 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
-
-import io from "socket.io-client";
 
 const socket = io.connect("/");
 
@@ -38,6 +38,7 @@ function Chat({
   const [userMessages, setUserMessages] = useState([]);
   const [isActiveChat, setIsActiveChat] = useState(null);
   const [indexOfActiveChat, setIndexOfActiveChat] = useState(null);
+  const [connectedUsers, setConnectedUsers] = useState([]);
   const history = useHistory();
 
   useEffect(() => {
@@ -58,7 +59,13 @@ function Chat({
     setFetchedFriends(tempUsers);
   };
 
-  const onSubmitMessageHandler = (event, message, senderId, recipientId) => {
+  const onSubmitMessageHandler = (
+    event,
+    message,
+    uniqueId,
+    senderId,
+    recipientId
+  ) => {
     if ((event.which !== 13 || event.shiftKey) && event.type !== "submit")
       return;
 
@@ -66,48 +73,114 @@ function Chat({
     const strippedMessage = message.split(" ").join("").split("\n").join("");
     if (!strippedMessage.length || !senderId || !recipientId) return;
 
-    const messagePayload = {
-      id: id,
+    // const messagePayload = {
+    //   // id: id,
+    //   senderId: senderId,
+    //   recipientId: recipientId,
+    //   timestamp: new Date().getTime(),
+    //   message: message,
+    // };
+    //
+    // setUserMessages((prevState) => [messagePayload, ...prevState]);
+    const encryptedMessage = toEncrypt(message);
+    socket.emit(socketIoActions.sendMessage, {
       senderId: senderId,
       recipientId: recipientId,
       timestamp: new Date().getTime(),
-      message: message,
-    };
-
-    setUserMessages((prevState) => [messagePayload, ...prevState]);
-    const encryptedMessage = toEncrypt(message);
-    socket.emit("chat", encryptedMessage);
+      message: encryptedMessage,
+    });
 
     // reset input form
     onInputMessageHandler("");
 
     //-----------temporary message id (must be handled by backend) -----------
-    setId((prevState) => prevState + 1);
+    // setId((prevState) => prevState + 1);
   };
 
+  const connectedUsersRef = useRef(connectedUsers);
+
   useEffect(() => {
-    socket.on("message", (data) => {
-      console.log(data);
-    });
+    console.log("online status: ", connectedUsers);
+    connectedUsersRef.current = connectedUsers;
+  }, [connectedUsers]);
+
+  useEffect(() => {
+    socket.on(
+      socketIoActions.onlineStatus,
+      ({ recipientId, socketId, userId, online }) => {
+        if (recipientId !== authUserId) return;
+        const _connectedUsers = [...connectedUsersRef.current];
+        const indexConnectedUser = _connectedUsers.findIndex(
+          (user) => user.socketId === socketId && user.userId === userId
+        );
+
+        // If user goes online
+        if (indexConnectedUser === -1 && online) {
+          const newConnectedUsers = [
+            ..._connectedUsers,
+            {
+              userId: userId,
+              socketId: socketId,
+            },
+          ];
+          setConnectedUsers(newConnectedUsers);
+        }
+
+        // if user goes offline
+        if (indexConnectedUser > -1 && !online) {
+          setConnectedUsers([
+            ..._connectedUsers.slice(0, indexConnectedUser),
+            ..._connectedUsers.slice(indexConnectedUser + 1),
+          ]);
+        }
+      }
+    );
+
+    socket.on(
+      socketIoActions.message,
+      ({ senderId, recipientId, timestamp, message }) => {
+        setUserMessages((prevState) => [
+          {
+            senderId: senderId,
+            recipientId: recipientId,
+            timestamp: timestamp,
+            message: toDecrypt(message),
+          },
+          ...prevState,
+        ]);
+      }
+    );
   }, [socket]);
 
-  const onClickDisplayMessagesHandler = (userId, index) => {
+  const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
     // if no users fetched or user's chat is already active
     // then avoid fetching / re-rendering again
-    if (fetchedFriends.length < 0 || isActiveChat === userId) {
+    if (fetchedFriends.length < 0 || isActiveChat === recipientId || !uniqueId)
       return;
+
+    if (recipientId || recipientId !== "") {
+      socket.emit(socketIoActions.joinRoom, {
+        userId: authUserId,
+        recipientId: recipientId,
+        roomId: uniqueId,
+      });
+
+      if (isActiveChat) {
+        socket.emit(socketIoActions.disconnectRoom);
+      }
     }
 
-    if (userId || userId !== "") {
-      socket.emit("joinRoom", { userId });
-    }
+    console.log(fetchedUserMessages);
+    console.log(authUserId);
+    console.log(recipientId);
 
     // match clicked user with their message && ensure that
     // authenticated user receives their messages ONLY
     const messagesArr = [];
     for (let message of fetchedUserMessages) {
       if (
-        (message.senderId === userId || message.recipientId === userId) &&
+        (message.senderId === recipientId ||
+          message.recipientId === recipientId) &&
         (message.senderId === authUserId || message.recipientId === authUserId)
       ) {
         messagesArr.push(message);
@@ -119,9 +192,9 @@ function Chat({
     );
 
     setUserMessages(sortedMessages);
-    setIsActiveChat(userId);
+    setIsActiveChat(recipientId);
     setIndexOfActiveChat(index);
-    history.push("/chat/" + userId);
+    history.push("/chat/" + recipientId);
   };
 
   return (
@@ -146,38 +219,45 @@ function Chat({
                   return null;
                 }
 
+                const {
+                  id,
+                  userId,
+                  uniqueId,
+                  avatar,
+                  name,
+                  lastMessage,
+                  time,
+                  userColor,
+                } = friend;
+
                 return (
                   <li
-                    key={friend.id}
+                    key={id}
                     className={`px-4 cursor-pointer ${
-                      isActiveChat === friend.id
-                        ? "bg-gray-600 font-semibold"
-                        : ""
+                      isActiveChat === id ? "bg-gray-600 font-semibold" : ""
                     } hover:bg-gray-700`}
                     onClick={() =>
-                      onClickDisplayMessagesHandler(friend.id, index)
+                      onClickDisplayMessagesHandler(id, index, uniqueId)
                     }
                   >
                     <div className="flex py-2 gap-4">
                       <div className="flex-none">
                         <ChatAvatar
-                          imgName={friend.avatar}
-                          friendName={friend.name}
+                          imgName={avatar}
+                          friendName={name}
                           textClass="h-16 w-16"
                           imgClass="h-16 w-16"
-                          userColor={friend.userColor}
+                          userColor={userColor}
                         />
                       </div>
 
                       <div className="w-52">
                         <div className="flex justify-between">
-                          <p className="my-1">{friend.name}</p>
-                          <p className="my-3 text-xs text-gray-400">
-                            {friend.time}
-                          </p>
+                          <p className="my-1">{name}</p>
+                          <p className="my-3 text-xs text-gray-400">{time}</p>
                         </div>
                         <p className="my-0 truncate text-sm italic text-gray-400">
-                          {friend.lastMessage}
+                          {lastMessage}
                         </p>
                       </div>
                     </div>
@@ -200,10 +280,17 @@ function Chat({
               textClass="h-12 w-12"
               userColor={fetchedFriends[indexOfActiveChat].userColor}
             />
-            <div className="my-auto">
-              <p className="m-0 font-semibold">
+            <div className="flex flex-col justify-center">
+              <h1 className="m-0 font-semibold text-base my-0">
                 {fetchedFriends[indexOfActiveChat].name}
-              </p>
+              </h1>
+              <h2 className="italic font-normal text-sm my-0">
+                {connectedUsers.find(
+                  (user) => user.userId === fetchedFriends[indexOfActiveChat].id
+                )
+                  ? "Online now"
+                  : "Last seen - August 24th at 17:03"}
+              </h2>
             </div>
           </div>
         )}
@@ -224,6 +311,7 @@ function Chat({
               onSubmitMessageHandler(
                 event,
                 fetchedFriends[indexOfActiveChat].inputMessage,
+                fetchedFriends[indexOfActiveChat].uniqueId,
                 authUserId,
                 isActiveChat
               )
@@ -237,6 +325,7 @@ function Chat({
                 onSubmitMessageHandler(
                   event,
                   fetchedFriends[indexOfActiveChat].inputMessage,
+                  fetchedFriends[indexOfActiveChat].uniqueId,
                   authUserId,
                   isActiveChat
                 )

@@ -50,7 +50,7 @@ function App({ isAuthenticated, onTryAutoSignup, ...props }) {
         <Route path="/chat" component={asyncChat} />
         {/*<Route path="/chat:id" component={asyncChatUserMessages} />*/}
         <Route path="/" exact component={asyncHome} />
-        <Redirect to="/" />
+        <Redirect to="/chat" />
       </Switch>
     );
   }
