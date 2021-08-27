@@ -15,7 +15,6 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
-import dateFormat from "dateformat";
 
 const socket = io.connect("/");
 
@@ -32,15 +31,14 @@ function Chat({
     ["inputMessage", "userColor"],
     isAuth
   );
-  const [fetchedUserMessages, setFetchedUserMessages] = useFetchJson(
+  const fetchedUserMessages = useFetchJson(
     "./json/userMessages1.json",
     null,
     isAuth
-  );
+  )[0];
   const [userMessages, setUserMessages] = useState([]);
   const [isActiveChat, setIsActiveChat] = useState(null);
   const [indexOfActiveChat, setIndexOfActiveChat] = useState(null);
-  const [connectedUsers, setConnectedUsers] = useState([]);
   const history = useHistory();
 
   useEffect(() => {
@@ -87,63 +85,19 @@ function Chat({
     onInputMessageHandler("");
   };
 
-  const connectedUsersRef = useRef(connectedUsers);
-
-  useEffect(() => {
-    connectedUsersRef.current = connectedUsers;
-  }, [connectedUsers]);
-
   useEffect(() => {
     socket.on(
       socketIoActions.onlineStatus,
       ({ recipientId, socketId, userId, online, lastOnline }) => {
         if (recipientId !== authUserId) return;
 
-        console.log(lastOnline);
-
-        const _connectedUsers = [...connectedUsersRef.current];
-        const indexConnectedUser = _connectedUsers.findIndex(
-          (user) => user.socketId === socketId && user.userId === userId
-        );
-
-        // If user goes online
-        if (indexConnectedUser === -1 && online) {
-          const newConnectedUsers = [
-            ..._connectedUsers,
-            {
-              userId: userId,
-              socketId: socketId,
-            },
-          ];
-          setConnectedUsers(newConnectedUsers);
-
-          // when user goes offline, need to record their current online status
-          setFetchedFriends((prevState) => {
-            const users = [...prevState];
-            console.log(users[indexConnectedUser]);
-            users[indexConnectedUser].onlineState = online;
-            return users;
-          });
-        }
-
-        // if user goes offline
-        if (indexConnectedUser > -1 && !online && lastOnline) {
-          setConnectedUsers([
-            ..._connectedUsers.slice(0, indexConnectedUser),
-            ..._connectedUsers.slice(indexConnectedUser + 1),
-          ]);
-
-          // when user goes offline, need to record their last online status
-          setFetchedFriends((prevState) => {
-            const users = [...prevState];
-            users[indexConnectedUser].onlineState = online;
-            users[indexConnectedUser].lastOnline = dateFormat(
-              lastOnline,
-              "isoDateTime"
-            );
-            return users;
-          });
-        }
+        setFetchedFriends((prevState) => {
+          const users = [...prevState];
+          const index = users.findIndex((user) => user.id === userId);
+          users[index].onlineState = online;
+          users[index].lastOnline = dateFormat(lastOnline, "isoDateTime");
+          return users;
+        });
       }
     );
 
@@ -184,6 +138,12 @@ function Chat({
       }
     );
   }, [socket]);
+
+  useEffect(() => {
+    console.log(fetchedFriends);
+  }, [fetchedFriends]);
+
+  console.log(indexOfActiveChat);
 
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
     // if no users fetched or user's chat is already active
@@ -226,6 +186,30 @@ function Chat({
     history.push("/chat/" + recipientId);
   };
 
+  const getTime = (time, prefix = false) => {
+    const timeCurrent = new Date().getTime();
+    const timeReceived = new Date(time).getTime();
+    const differenceInTime = timeReceived - timeCurrent;
+    const differenceInDays = Math.floor(
+      Math.abs(differenceInTime / (1000 * 3600 * 24))
+    );
+    const postfix = prefix ? ` at ${dateFormat(time, "HH:M")}` : "";
+    let _prefix = prefix ? "on " : "";
+
+    if (differenceInDays === 0) {
+      _prefix = prefix ? "today at " : "";
+      return _prefix + dateFormat(time, "HH:M");
+    } else if (differenceInDays === 1) {
+      _prefix = prefix ? "" : "";
+      return _prefix + "yesterday" + postfix;
+    } else if (differenceInDays <= 7 && differenceInDays > 1) {
+      // const dayOfTheWeek = prefix ? "dddd" : "ddd";
+      return _prefix + dateFormat(time, "dddd") + postfix;
+    } else {
+      return _prefix + dateFormat(time, "dd/mm/yyyy") + postfix;
+    }
+  };
+
   return (
     <div className="flex -mx-4">
       <div className="h-screen flex flex-col">
@@ -259,24 +243,6 @@ function Chat({
                   userColor,
                 } = friend;
 
-                let setTime = "";
-                const timeCurrent = new Date().getTime();
-                const timeReceived = new Date(time).getTime();
-                const differenceInTime = timeReceived - timeCurrent;
-                const differenceInDays = Math.floor(
-                  Math.abs(differenceInTime / (1000 * 3600 * 24))
-                );
-
-                if (differenceInDays === 0) {
-                  setTime = dateFormat(time, "HH:M");
-                } else if (differenceInDays === 1) {
-                  setTime = "yesterday";
-                } else if (differenceInDays <= 7 && differenceInDays > 1) {
-                  setTime = dateFormat(time, "ddd");
-                } else {
-                  setTime = dateFormat(time, "dd/mm/yyyy");
-                }
-
                 return (
                   <li
                     key={id}
@@ -302,7 +268,7 @@ function Chat({
                         <div className="flex justify-between">
                           <span className="truncate">{name}</span>
                           <span className="text-xs text-gray-400">
-                            {setTime}
+                            {getTime(time)}
                           </span>
                         </div>
                         <p className="my-0 truncate text-sm italic text-gray-400">
@@ -334,11 +300,18 @@ function Chat({
                 {fetchedFriends[indexOfActiveChat].name}
               </h1>
               <h2 className="italic font-normal text-sm my-0">
-                {connectedUsers.find(
-                  (user) => user.userId === fetchedFriends[indexOfActiveChat].id
-                )
+                {/*{connectedUsers.find(*/}
+                {/*  (user) => user.userId === fetchedFriends[indexOfActiveChat].id*/}
+                {/*)*/}
+                {/*  ? "Online now"*/}
+                {/*  : "Last seen - August 24th at 17:03"}*/}
+
+                {fetchedFriends[indexOfActiveChat].onlineState
                   ? "Online now"
-                  : "Last seen - August 24th at 17:03"}
+                  : `Last seen ${getTime(
+                      fetchedFriends[indexOfActiveChat].lastOnline,
+                      true
+                    )}`}
               </h2>
             </div>
           </div>

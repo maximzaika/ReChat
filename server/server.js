@@ -2,7 +2,7 @@ process.env.TZ = "Europe/Amsterdam";
 const express = require("express");
 const app = express();
 const socket = require("socket.io");
-const color = require("colors");
+
 const cors = require("cors");
 const {
   joinedUserHandler,
@@ -12,6 +12,7 @@ const {
 } = require("./dummyuser");
 const actions = require("./socketIoActionTypes");
 const dateFormat = require("dateformat");
+const { log } = require("./shared/logger");
 
 app.use(express());
 
@@ -19,10 +20,9 @@ const port = 8000;
 
 app.use(cors());
 
-let server = app.listen(
-  port,
-  console.log(`Server is running on the port no: ${port} `.green)
-);
+let server = app.listen(port, () => {
+  log(`[START] Server is running: ${port}`, "green");
+});
 
 const io = socket(server);
 
@@ -33,13 +33,13 @@ io.on(actions.connection, (socket) => {
     const user = joinedUserHandler(socket.id, userId, recipientId, roomId);
     const date = new Date();
 
-    console.log("user online> ", userOnline);
-
     if (user.new) {
       socket.join(user.data.roomId);
+      log(`[joinRoom] ${userId} joined ${recipientId}. Room ${roomId}`);
     }
 
     if (userOnline) {
+      log(`[onlineStatus] ${userId} notifies ${recipientId}`);
       socket.emit(actions.onlineStatus, {
         userId: userOnline.userId,
         socketId: userOnline.socketId,
@@ -48,8 +48,6 @@ io.on(actions.connection, (socket) => {
         online: true,
       });
     }
-
-    console.log("connected user > ", user);
 
     // If user has opened the chat, it would show their online status
     socket.broadcast.to(user.data.roomId).emit(actions.onlineStatus, {
@@ -67,6 +65,7 @@ io.on(actions.connection, (socket) => {
       const user = getUserHandler(socket.id, recipientId);
 
       if (user) {
+        log(`[message] ${senderId} to ${recipientId}`);
         io.to(user.roomId).emit(actions.message, {
           senderId: senderId,
           recipientId: user.recipientId,
@@ -82,6 +81,9 @@ io.on(actions.connection, (socket) => {
     const date = new Date();
 
     if (user) {
+      log(
+        `[onlineStatus] (disconnectRoom) ${user.userId} closed chat ${user.recipientId}`
+      );
       io.to(user.roomId).emit(actions.onlineStatus, {
         userId: user.userId,
         socketId: user.socketId,
@@ -97,6 +99,9 @@ io.on(actions.connection, (socket) => {
     const date = new Date();
 
     if (user) {
+      log(
+        `[onlineStatus (disconnect)] ${user.userId} disconnected from ${user.recipientId}`
+      );
       io.to(user.roomId).emit(actions.onlineStatus, {
         userId: user.userId,
         socketId: user.socketId,
