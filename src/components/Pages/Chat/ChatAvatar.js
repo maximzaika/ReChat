@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function ChatAvatar({
   imgName,
@@ -26,7 +26,7 @@ export default function ChatAvatar({
   // }, []);
 
   return (
-    <Fragment>
+    <>
       {imgName ? (
         <img
           className={imgClass + " object-cover object-center rounded-full"}
@@ -41,6 +41,6 @@ export default function ChatAvatar({
           </h2>
         </div>
       )}
-    </Fragment>
+    </>
   );
 }

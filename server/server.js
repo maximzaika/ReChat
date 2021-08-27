@@ -1,16 +1,18 @@
+process.env.TZ = "Europe/Amsterdam";
 const express = require("express");
 const app = express();
 const socket = require("socket.io");
-const color = require("colors");
+
 const cors = require("cors");
 const {
   joinedUserHandler,
   joinedUsersHandler,
   getUserHandler,
-  disconnectRoomHandler,
   disconnectUserHandler,
 } = require("./dummyuser");
 const actions = require("./socketIoActionTypes");
+const dateFormat = require("dateformat");
+const { log } = require("./shared/logger");
 
 app.use(express());
 
@@ -18,10 +20,9 @@ const port = 8000;
 
 app.use(cors());
 
-let server = app.listen(
-  port,
-  console.log(`Server is running on the port no: ${port} `.green)
-);
+let server = app.listen(port, () => {
+  log(`[START] Server is running: ${port}`, "green");
+});
 
 const io = socket(server);
 
@@ -30,35 +31,30 @@ io.on(actions.connection, (socket) => {
     // creates unique socket id of the connected user
     const userOnline = joinedUsersHandler(socket.id, roomId);
     const user = joinedUserHandler(socket.id, userId, recipientId, roomId);
-
-    console.log("user online> ", userOnline);
+    const date = new Date();
 
     if (user.new) {
       socket.join(user.data.roomId);
-
-      // socket.emit(actions.message, {
-      //   socketId: user.data.socketId,
-      //   recipientId: user.data.recipientId,
-      //   message: `Welcome ${user.data.socketId}`,
-      // });
+      log(`[joinRoom] ${userId} joined ${recipientId}. Room ${roomId}`);
     }
 
     if (userOnline) {
+      log(`[onlineStatus] ${userId} notifies ${recipientId}`);
       socket.emit(actions.onlineStatus, {
         userId: userOnline.userId,
         socketId: userOnline.socketId,
         recipientId: userOnline.recipientId,
+        lastOnline: dateFormat(date, "isoDateTime"),
         online: true,
       });
     }
-
-    console.log("connected user > ", user);
 
     // If user has opened the chat, it would show their online status
     socket.broadcast.to(user.data.roomId).emit(actions.onlineStatus, {
       userId: user.data.userId,
       socketId: user.data.socketId,
       recipientId: user.data.recipientId,
+      lastOnline: dateFormat(date, "isoDateTime"),
       online: true,
     });
   });
@@ -69,6 +65,7 @@ io.on(actions.connection, (socket) => {
       const user = getUserHandler(socket.id, recipientId);
 
       if (user) {
+        log(`[message] ${senderId} to ${recipientId}`);
         io.to(user.roomId).emit(actions.message, {
           senderId: senderId,
           recipientId: user.recipientId,
@@ -81,12 +78,17 @@ io.on(actions.connection, (socket) => {
 
   socket.on(actions.disconnectRoom, () => {
     const user = disconnectUserHandler(socket.id);
+    const date = new Date();
 
     if (user) {
+      log(
+        `[onlineStatus] (disconnectRoom) ${user.userId} closed chat ${user.recipientId}`
+      );
       io.to(user.roomId).emit(actions.onlineStatus, {
         userId: user.userId,
         socketId: user.socketId,
         recipientId: user.recipientId,
+        lastOnline: dateFormat(date, "isoDateTime"),
         online: false,
       });
     }
@@ -94,12 +96,17 @@ io.on(actions.connection, (socket) => {
 
   socket.on(actions.disconnect, () => {
     const user = disconnectUserHandler(socket.id);
+    const date = new Date();
 
     if (user) {
+      log(
+        `[onlineStatus (disconnect)] ${user.userId} disconnected from ${user.recipientId}`
+      );
       io.to(user.roomId).emit(actions.onlineStatus, {
         userId: user.userId,
         socketId: user.socketId,
         recipientId: user.recipientId,
+        lastOnline: dateFormat(date, "isoDateTime"),
         online: false,
       });
     }
