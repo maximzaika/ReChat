@@ -8,6 +8,7 @@
     "@reduxjs/toolkit": "^1.6.0",
     "aes256": "^1.1.0",
     "cookies-js": "^1.2.3",
+    "dateformat": "^4.5.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-redux": "^7.2.4",

@@ -1,3 +1,4 @@
+process.env.TZ = "Europe/Amsterdam";
 const express = require("express");
 const app = express();
 const socket = require("socket.io");
@@ -7,10 +8,10 @@ const {
   joinedUserHandler,
   joinedUsersHandler,
   getUserHandler,
-  disconnectRoomHandler,
   disconnectUserHandler,
 } = require("./dummyuser");
 const actions = require("./socketIoActionTypes");
+const dateFormat = require("dateformat");
 
 app.use(express());
 
@@ -30,17 +31,12 @@ io.on(actions.connection, (socket) => {
     // creates unique socket id of the connected user
     const userOnline = joinedUsersHandler(socket.id, roomId);
     const user = joinedUserHandler(socket.id, userId, recipientId, roomId);
+    const date = new Date();
 
     console.log("user online> ", userOnline);
 
     if (user.new) {
       socket.join(user.data.roomId);
-
-      // socket.emit(actions.message, {
-      //   socketId: user.data.socketId,
-      //   recipientId: user.data.recipientId,
-      //   message: `Welcome ${user.data.socketId}`,
-      // });
     }
 
     if (userOnline) {
@@ -48,6 +44,7 @@ io.on(actions.connection, (socket) => {
         userId: userOnline.userId,
         socketId: userOnline.socketId,
         recipientId: userOnline.recipientId,
+        lastOnline: dateFormat(date, "isoDateTime"),
         online: true,
       });
     }
@@ -59,6 +56,7 @@ io.on(actions.connection, (socket) => {
       userId: user.data.userId,
       socketId: user.data.socketId,
       recipientId: user.data.recipientId,
+      lastOnline: dateFormat(date, "isoDateTime"),
       online: true,
     });
   });
@@ -81,12 +79,14 @@ io.on(actions.connection, (socket) => {
 
   socket.on(actions.disconnectRoom, () => {
     const user = disconnectUserHandler(socket.id);
+    const date = new Date();
 
     if (user) {
       io.to(user.roomId).emit(actions.onlineStatus, {
         userId: user.userId,
         socketId: user.socketId,
         recipientId: user.recipientId,
+        lastOnline: dateFormat(date, "isoDateTime"),
         online: false,
       });
     }
@@ -94,12 +94,14 @@ io.on(actions.connection, (socket) => {
 
   socket.on(actions.disconnect, () => {
     const user = disconnectUserHandler(socket.id);
+    const date = new Date();
 
     if (user) {
       io.to(user.roomId).emit(actions.onlineStatus, {
         userId: user.userId,
         socketId: user.socketId,
         recipientId: user.recipientId,
+        lastOnline: dateFormat(date, "isoDateTime"),
         online: false,
       });
     }

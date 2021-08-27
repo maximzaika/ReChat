@@ -7,8 +7,6 @@ export default function ChatUserMessages({
   authUserId,
   setMessages,
 }) {
-  console.log("rendering");
-
   const onHoverShowTime = (event, index) => {
     const eventType = event._reactName;
     const tempMessage = [...messages];

@@ -6,7 +6,9 @@
       "avatar": null,
       "name": "Valeriy",
       "lastMessage": "Ok OK bos",
-      "time": "18:42"
+      "time": "2021-08-27T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-27T08:19:03+0200"
     },
     {
       "id": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
@@ -15,7 +17,9 @@
       "avatar": null,
       "name": "Maxim",
       "lastMessage": "Ok OK bos",
-      "time": "18:42"
+      "time": "2021-08-26T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-26T08:19:03+0200"
     },
     {
       "id": "oymVbduXBQWWUeyPAeQDPYpzaih2",
@@ -24,7 +28,9 @@
       "avatar": null,
       "name": "Test",
       "lastMessage": "Ok OK bos",
-      "time": "18:42"
+      "time": "2021-08-25T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-25T08:19:03+0200"
     },
     {
       "id": "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
@@ -33,7 +39,9 @@
       "avatar": null,
       "name": "Valeriy",
       "lastMessage": "Ok OK bos",
-      "time": "18:42"
+      "time": "2021-08-24T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-24T08:19:03+0200"
     },
     {
       "id": 2,
@@ -42,16 +50,20 @@
       "avatar": "Manu.jpg",
       "name": "Manu",
       "lastMessage": "How's things with you?",
-      "time": "yesterday"
+      "time": "2021-08-26T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-26T08:19:03+0200"
     },
     {
       "id": 3,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
       "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_3",
       "avatar": "Nikhi.jpg",
-      "name": "Nikhi",
+      "name": "Nikhi Nikhi Nikhi Nikhi Nikhi Nikhi ",
       "lastMessage": "Yeah, put a mil and wait",
-      "time": "Friday"
+      "time": "2021-08-22T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-22T08:19:03+0200"
     },
     {
       "id": 4,
@@ -60,7 +72,9 @@
       "avatar": null,
       "name": "Max",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-21T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 5,
@@ -69,16 +83,20 @@
       "avatar": null,
       "name": "Kriss",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-20T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 6,
       "userId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
       "uniqueId": "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1_6",
       "avatar": null,
-      "name": "Evan",
+      "name": "Evan Evan Evan Evan Evan Evan Evan Evan Evan Evan ",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-19T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 7,
@@ -87,7 +105,9 @@
       "avatar": null,
       "name": "Valeriy",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-18T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 8,
@@ -96,7 +116,9 @@
       "avatar": null,
       "name": "Alena",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-17T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 9,
@@ -105,7 +127,9 @@
       "avatar": null,
       "name": "Karina",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-16T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 10,
@@ -114,7 +138,9 @@
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-14T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 11,
@@ -123,7 +149,9 @@
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-13T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 12,
@@ -132,7 +160,9 @@
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-12T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 13,
@@ -141,7 +171,9 @@
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-11T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 14,
@@ -150,7 +182,9 @@
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-10T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 15,
@@ -159,7 +193,9 @@
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-09T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 16,
@@ -168,7 +204,9 @@
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 17,
@@ -177,7 +215,9 @@
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 18,
@@ -186,7 +226,9 @@
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 19,
@@ -195,7 +237,9 @@
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 20,
@@ -204,7 +248,9 @@
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 21,
@@ -213,7 +259,9 @@
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 22,
@@ -222,7 +270,9 @@
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 23,
@@ -231,7 +281,9 @@
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 24,
@@ -240,7 +292,9 @@
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 25,
@@ -249,7 +303,9 @@
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 26,
@@ -258,7 +314,9 @@
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 27,
@@ -267,7 +325,9 @@
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 28,
@@ -276,7 +336,9 @@
       "avatar": null,
       "name": "Anton",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 29,
@@ -285,7 +347,9 @@
       "avatar": null,
       "name": "Michael",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     },
     {
       "id": 30,
@@ -294,6 +358,8 @@
       "avatar": null,
       "name": "Zoya",
       "lastMessage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      "time": "15:15"
+      "time": "2021-08-08T13:10:20+0800",
+      "onlineState": false,
+      "lastOnline": "2021-08-21T08:19:03+0200"
     }
   ]
