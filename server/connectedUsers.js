@@ -24,21 +24,18 @@ const joinedUsersHandler = (socketId, roomId) => {
   );
 };
 
-console.log("user out", connectedUsers);
-
 // received user's id to return the current user
-const getUserHandler = (socketId, recipientId) => {
+const getUserHandler = (socketId) => {
   return connectedUsers.find((user) => user.socketId === socketId);
 };
 
-// const disconnectRoomHandler = (socketId, userId, recipientId) => {
-//   return connectedUsers.find(
-//     (user) =>
-//       user.socketId === socketId &&
-//       user.userId === userId &&
-//       user.recipientId === recipientId
-//   );
-// };
+const messageReceivedHandler = (receivedFromUserId, receivedByUserId) => {
+  return connectedUsers.find(
+    (user) =>
+      user.userId === receivedByUserId &&
+      user.recipientId === receivedFromUserId
+  );
+};
 
 // called when the user leaves the chat and its object gets deleted from the array
 const disconnectUserHandler = (disconnectedUser) => {
@@ -52,6 +49,6 @@ module.exports = {
   joinedUserHandler,
   joinedUsersHandler,
   getUserHandler,
-  // disconnectRoomHandler,
+  messageReceivedHandler,
   disconnectUserHandler,
 };

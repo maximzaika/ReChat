@@ -6,4 +6,7 @@ module.exports = Object.freeze({
   onlineStatus: "onlineStatus",
   sendMessage: "sendMessage",
   message: "message",
+  messageStatus: "messageStatus",
+  messageReceived: "messageReceived",
+  messageSeen: "messageSeen",
 });

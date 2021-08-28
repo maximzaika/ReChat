@@ -7,7 +7,7 @@ import * as socketIoActions from "../shared/socketIoActionTypes";
 import { toDecrypt, toEncrypt } from "../shared/aes";
 
 import HorizontalLine from "../components/UI/HorizontalLine/HorizontalLine";
-import useFetchJson from "../hooks/useFetchJson";
+import useFetch from "../hooks/useFetchJson";
 import DivOverflowY from "../components/UI/DivOverflowY/DivOverflowY";
 import TextArea from "../components/UI/TextArea/TextArea";
 import IcoSendMessage from "../assets/ico/ico-send-message";
@@ -26,20 +26,26 @@ function Chat({
   socketProcess,
 }) {
   const dateFormat = require("dateformat");
-  const [fetchedFriends, setFetchedFriends] = useFetchJson(
-    "./json/friendList.json",
+  const [fetchedFriends, setFetchedFriends] = useFetch(
+    "/friendList",
     ["inputMessage", "userColor"],
-    isAuth
+    isAuth,
+    { userId: authUserId }
   );
-  const fetchedUserMessages = useFetchJson(
-    "./json/userMessages1.json",
-    null,
-    isAuth
-  )[0];
+  const fetchedUserMessages = useFetch("/messages", null, isAuth, {
+    userId: authUserId,
+  })[0];
+
   const [userMessages, setUserMessages] = useState([]);
   const [isActiveChat, setIsActiveChat] = useState(null);
   const [indexOfActiveChat, setIndexOfActiveChat] = useState(null);
   const history = useHistory();
+
+  const _isActiveChat = useRef(isActiveChat);
+
+  useEffect(() => {
+    _isActiveChat.current = isActiveChat;
+  }, [isActiveChat]);
 
   useEffect(() => {
     if (!isActiveChat) {
@@ -77,7 +83,7 @@ function Chat({
     socket.emit(socketIoActions.sendMessage, {
       senderId: senderId,
       recipientId: recipientId,
-      timestamp: new Date().getTime(),
+      timestamp: dateFormat(new Date(), "isoDateTime"),
       message: encryptedMessage,
     });
 
@@ -103,9 +109,17 @@ function Chat({
 
     socket.on(
       socketIoActions.message,
-      ({ senderId, recipientId, timestamp, message }) => {
+      ({ id, senderId, recipientId, timestamp, message, messageStatus }) => {
         const decryptedMessage = toDecrypt(message);
         const date = new Date();
+
+        if (senderId === _isActiveChat.current) {
+          socket.emit(socketIoActions.messageSeen, {
+            messageId: id,
+            userId: senderId,
+            recipientId: recipientId,
+          });
+        }
 
         setFetchedFriends((prevState) => {
           const _fetchedFriends = [...prevState];
@@ -128,22 +142,68 @@ function Chat({
 
         setUserMessages((prevState) => [
           {
+            id: id,
             senderId: senderId,
             recipientId: recipientId,
             timestamp: timestamp,
             message: decryptedMessage,
+            messageStatus: messageStatus,
           },
           ...prevState,
         ]);
+
+        // if message is received by another client then
+        // notify the server
+        if (recipientId !== authUserId && _isActiveChat.current !== senderId)
+          return;
+
+        socket.emit(socketIoActions.messageStatus, {
+          userId: authUserId,
+          recipientId: senderId,
+        });
+      }
+    );
+
+    socket.on(
+      socketIoActions.messageReceived,
+      ({ messagesId, userId, recipientId }) => {
+        if (userId !== authUserId) return;
+        setUserMessages((prevState) => {
+          const currentMessages = [...prevState];
+          for (let messageId of messagesId) {
+            const index = currentMessages.findIndex(
+              (message) =>
+                message.id === messageId &&
+                message.senderId === userId &&
+                message.recipientId === recipientId
+            );
+            if (index > -1) currentMessages[index].messageStatus = 1;
+          }
+          return currentMessages;
+        });
+      }
+    );
+
+    socket.on(
+      socketIoActions.messageSeen,
+      ({ messagesId, userId, recipientId }) => {
+        if (userId !== authUserId) return;
+        setUserMessages((prevState) => {
+          const currentMessages = [...prevState];
+          for (let messageId of messagesId) {
+            const index = currentMessages.findIndex(
+              (message) =>
+                message.id === messageId &&
+                message.senderId === userId &&
+                message.recipientId === recipientId
+            );
+            if (index > -1) currentMessages[index].messageStatus = 2;
+          }
+          return currentMessages;
+        });
       }
     );
   }, [socket]);
-
-  useEffect(() => {
-    console.log(fetchedFriends);
-  }, [fetchedFriends]);
-
-  console.log(indexOfActiveChat);
 
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
     // if no users fetched or user's chat is already active
@@ -176,9 +236,11 @@ function Chat({
       }
     }
 
-    const sortedMessages = messagesArr.sort((a, b) =>
-      a.timestamp > b.timestamp ? 1 : -1
-    );
+    const sortedMessages = messagesArr
+      .sort((a, b) => (new Date(a).getTime() > new Date(b).getTime() ? 1 : -1))
+      .map((m) => {
+        return { ...m, message: toDecrypt(m.message) };
+      });
 
     setUserMessages(sortedMessages);
     setIsActiveChat(recipientId);
@@ -300,12 +362,6 @@ function Chat({
                 {fetchedFriends[indexOfActiveChat].name}
               </h1>
               <h2 className="italic font-normal text-sm my-0">
-                {/*{connectedUsers.find(*/}
-                {/*  (user) => user.userId === fetchedFriends[indexOfActiveChat].id*/}
-                {/*)*/}
-                {/*  ? "Online now"*/}
-                {/*  : "Last seen - August 24th at 17:03"}*/}
-
                 {fetchedFriends[indexOfActiveChat].onlineState
                   ? "Online now"
                   : `Last seen ${getTime(

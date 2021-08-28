@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export default function useFetchJson(url, addExtraObject, isAuth) {
+export default function useFetch(url, addExtraObject, isAuth, userData) {
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -10,10 +10,12 @@ export default function useFetchJson(url, addExtraObject, isAuth) {
     }
 
     fetch(url, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
+      body: JSON.stringify(userData),
     })
       .then((response) => {
         return response.json();

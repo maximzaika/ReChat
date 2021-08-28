@@ -2,7 +2,7 @@
   "name": "react-chat",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:8000",
+  "proxy": "http://localhost:8000/",
   "dependencies": {
     "@craco/craco": "^5.9.0",
     "@reduxjs/toolkit": "^1.6.0",
