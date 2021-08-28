@@ -1,5 +1,6 @@
 const dateFormat = require("dateformat");
 
+// messageStatus = 0 = sent
 // messageStatus = 1 = received
 // messageStatus = 2 = received + seen
 const messages = [
@@ -8,8 +9,7 @@ const messages = [
     senderId: "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
     recipientId: "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
     timestamp: 1623753231285,
-    message:
-      "SenderId: D3M9bfjj9mSRfNR7gWKB2U7v4Ei1, recipientId: wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
+    message: "hrVDPmSIvlTK8d8JnYPd+IJz+g==",
     messageStatus: 2,
   },
   {
@@ -17,8 +17,7 @@ const messages = [
     senderId: "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
     recipientId: "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
     timestamp: 1623753310611,
-    message:
-      "SenderId: wAeLWFdtWgcFQF4tPvMeEcPp4nJ2, recipientId: D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
+    message: "+SlVwVtxMssQNObatQ5kuggxnA==",
     messageStatus: 2,
   },
   {
@@ -69,14 +68,57 @@ const messages = [
     recipientId: 2,
     timestamp: 1623753310611,
     message: "#2 SenderId: D3M9bfjj9mSRfNR7gWKB2U7v4Ei1, recipientId: 2",
-    received: 2,
+    messageStatus: 2,
   },
 ];
 
-const getUserMessagesHandler = (userId) => {
-  return messages.filter(
-    (message) => message.senderId === userId || message.recipientId === userId
-  );
+const checkPendingMessagesHandler = (userId, messageStatus) => {
+  /* contains pending messages in the following format:
+     [
+        { userId : [messageId, messageId, messageId...] },
+        { userId : [messageId, messageId, messageId...] },
+     ]
+  */
+  const messageIds = [];
+  for (let message of messages) {
+    if (
+      message.recipientId === userId &&
+      message.messageStatus === messageStatus
+    ) {
+      message.messageStatus = messageStatus + 1;
+      if (!messageIds.length) {
+        messageIds.push({
+          [message.senderId]: [message.id],
+        });
+      } else {
+        let found = false;
+        for (let messageId of messageIds) {
+          if (message.senderId in messageId) {
+            messageId[message.senderId].push(message.id);
+            found = true;
+            break;
+          }
+        }
+
+        if (!found)
+          messageIds.push({
+            [message.senderId]: [message.id],
+          });
+      }
+    }
+  }
+  return messageIds;
+};
+
+const getUserMessagesHandler = (userId, messageStatus) => {
+  const messageIds = checkPendingMessagesHandler(userId, messageStatus);
+
+  return [
+    messages.filter(
+      (message) => message.senderId === userId || message.recipientId === userId
+    ),
+    messageIds,
+  ];
 };
 
 const getNextMessageIdHandler = () => {
@@ -85,32 +127,57 @@ const getNextMessageIdHandler = () => {
   if (!currentId) return 0;
 };
 
-const addMessageHandler = (senderId, recipientId, encryptedMessage) => {
-  const index = getNextMessageIdHandler();
+const addMessageHandler = (
+  senderId,
+  recipientId,
+  timestamp,
+  encryptedMessage
+) => {
+  const newMessageId = getNextMessageIdHandler();
   const message = {
-    id: index,
+    id: newMessageId,
     senderId: senderId,
     recipientId: recipientId,
-    timestamp: dateFormat(new Date(), "isoDateTime"),
+    timestamp: dateFormat(timestamp, "isoDateTime"),
     message: encryptedMessage,
-    messageStatus: 1,
+    messageStatus: 0,
   };
   messages.push(message);
   return message;
 };
 
-const updateMessageStatusHandler = (userId, recipientId) => {
-  const index = messages.findIndex(
+// status: 0 = sent, 1 = received, 2 = seen + received
+const updateMessagesStatusHandler = (userId, recipientId, status) => {
+  const messageIds = [];
+  for (let message of messages) {
+    if (
+      message.senderId === userId &&
+      message.recipientId === recipientId &&
+      message.messageStatus === status - 1
+    ) {
+      message.messageStatus = status;
+      messageIds.push(message.id);
+    }
+  }
+  return messageIds;
+};
+
+// status: 0 = sent, 1 = received, 2 = seen + received
+const updateMessageStatusHandler = (messageId, userId, recipientId, status) => {
+  const messageIndex = messages.findIndex(
     (message) =>
-      message.senderId === userId && message.recipientId === recipientId
+      message.id === messageId &&
+      message.senderId === userId &&
+      message.recipientId === recipientId &&
+      message.messageStatus === status - 1
   );
-  messages[index].messageStatus = 2;
-  return messages[index].id;
+  messages[messageIndex] = status;
 };
 
 module.exports = {
   getUserMessagesHandler,
   getNextMessageIdHandler,
   addMessageHandler,
+  updateMessagesStatusHandler,
   updateMessageStatusHandler,
 };

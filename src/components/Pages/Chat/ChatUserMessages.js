@@ -33,15 +33,29 @@ export default function ChatUserMessages({
 
             // Sent messages are always on the right
             // while received messages are always on the left
-            let customMessageClass = "ml-auto bg-p-dark";
+            let customMessageClass = "bg-p-dark";
             if (message.recipientId === authUserId) {
               customMessageClass = "bg-gray-600";
             }
 
+            let messageStatus = "sent";
+            if (message.messageStatus === 0) {
+              messageStatus = "sent";
+            } else if (message.messageStatus === 1) {
+              messageStatus = "received";
+            } else {
+              // message.messageStatus = 2
+              messageStatus = "seen";
+            }
+
             return (
-              <div key={index} className="flex my-2">
+              <div key={message.id} className="flex my-2">
+                {message.recipientId !== authUserId && (
+                  <span className="ml-auto mr-3">{messageStatus}</span>
+                )}
+
                 <span
-                  className={`p-2 rounded max-w-sm ${customMessageClass} cursor-pointer fe`}
+                  className={`p-2 rounded max-w-sm cursor-pointer ${customMessageClass}`}
                   onMouseEnter={(event) => onHoverShowTime(event, index)}
                   onMouseLeave={(event) => onHoverShowTime(event, index)}
                 >

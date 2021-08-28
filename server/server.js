@@ -20,6 +20,7 @@ const {
   getUserMessagesHandler,
   getNextMessageIdHandler,
   addMessageHandler,
+  updateMessagesStatusHandler,
   updateMessageStatusHandler,
 } = require("./messages");
 
@@ -38,6 +39,12 @@ app.use(
 app.use(bodyParser.json());
 // app.use(express.urlencoded({ extended: true }));
 
+let server = app.listen(port, () => {
+  log(`[START] Listening on port: ${port}`, "green");
+});
+
+const io = socket(server);
+
 app.post("/friendList", (req, res) => {
   log(`[POST REQUEST] /friendList requested by ${req.body.userId}`);
   const friends = getFriendsHandlers(req.body.userId);
@@ -47,16 +54,27 @@ app.post("/friendList", (req, res) => {
 
 app.post("/messages", (req, res) => {
   log(`[POST REQUEST] /messages requested by ${req.body.userId}`);
-  const messages = getUserMessagesHandler(req.body.userId);
+  const messages = getUserMessagesHandler(req.body.userId, 0);
   res.writeHead(201, { "Content-Type": "application/json" });
-  res.end(JSON.stringify(messages));
-});
+  res.end(JSON.stringify(messages[0]));
 
-let server = app.listen(port, () => {
-  log(`[START] Listening on port: ${port}`, "green");
-});
+  for (let pendingSenders of messages[1]) {
+    // logically senders become recipients because we need to notify them that
+    // the message has been received
+    const recipientId = Object.keys(pendingSenders)[0];
+    const messagesId = pendingSenders[recipientId];
+    const senderId = messageReceivedHandler(req.body.userId, recipientId);
 
-const io = socket(server);
+    if (senderId) {
+      log(`[MESSAGE RECEIVED] ${senderId.recipientId} from ${senderId.userId}`);
+      io.in(senderId.roomId).emit(actions.messageReceived, {
+        messagesId: messagesId,
+        userId: senderId.userId,
+        recipientId: senderId.recipientId,
+      });
+    }
+  }
+});
 
 io.on(actions.connection, (socket) => {
   socket.on(actions.joinRoom, ({ userId, recipientId, roomId }) => {
@@ -89,6 +107,24 @@ io.on(actions.connection, (socket) => {
       lastOnline: dateFormat(date, "isoDateTime"),
       online: true,
     });
+
+    const messages = getUserMessagesHandler(userId, 1);
+    for (let pendingSenders of messages[1]) {
+      // logically senders become recipients because we need to notify them that
+      // the message has been received
+      const recipientId = Object.keys(pendingSenders)[0];
+      const messagesId = pendingSenders[recipientId];
+      const senderId = messageReceivedHandler(userId, recipientId);
+
+      if (senderId) {
+        log(`[MESSAGE SEEN] ${senderId.recipientId} from ${senderId.userId}`);
+        socket.broadcast.to(senderId.roomId).emit(actions.messageSeen, {
+          messagesId: messagesId,
+          userId: senderId.userId,
+          recipientId: senderId.recipientId,
+        });
+      }
+    }
   });
 
   socket.on(
@@ -97,27 +133,63 @@ io.on(actions.connection, (socket) => {
       const user = getUserHandler(socket.id);
 
       if (user) {
-        log(`[message] ${senderId} to ${recipientId}`);
-        io.to(user.roomId).emit(actions.message, {
-          senderId: senderId,
-          recipientId: user.recipientId,
-          timestamp: timestamp,
-          message: message,
-        });
+        const messageSent = addMessageHandler(
+          senderId,
+          recipientId,
+          timestamp,
+          message
+        );
+        log(`[sendMessage (message)] ${senderId} to ${recipientId}`);
+        io.to(user.roomId).emit(actions.message, messageSent);
       }
     }
   );
 
   socket.on(actions.messageStatus, ({ userId, recipientId }) => {
     const senderId = messageReceivedHandler(userId, recipientId);
-    console.log(senderId);
     // socketId, userId, recipientId, RoomId
 
-    socket.broadcast.to(senderId.roomId).emit(actions.messageReceived, {
-      userId: senderId.userId,
-      socketId: senderId.socketId,
-      recipientId: senderId.recipientId,
-    });
+    if (senderId) {
+      // 1 = received
+      const messagesId = updateMessagesStatusHandler(recipientId, userId, 1);
+      log(`[messageStatus (messageReceived)] ${recipientId} from ${userId}`);
+      socket.broadcast.to(senderId.roomId).emit(actions.messageReceived, {
+        messagesId: messagesId,
+        userId: senderId.userId,
+        recipientId: senderId.recipientId,
+      });
+    }
+  });
+
+  // socket.on(actions.messageReceived, ({ messageId, userId, recipientId }) => {
+  //   updateMessagesStatusHandler(recipientId, userId, 1);
+  //   const user = messageReceivedHandler(recipientId, userId);
+  //
+  //   if (user) {
+  //     log(`[messageReceived] ${recipientId} from ${userId}`);
+  //     socket.broadcast.to(user.roomId).emit(actions.messageReceived, {
+  //       messagesId: [messageId],
+  //       userId: userId,
+  //       recipientId: recipientId,
+  //     });
+  //   }
+  // });
+
+  socket.on(actions.messageSeen, ({ messageId, userId, recipientId }) => {
+    updateMessageStatusHandler(recipientId, userId, 1);
+    updateMessageStatusHandler(recipientId, userId, 2);
+    const user = messageReceivedHandler(recipientId, userId);
+
+    console.log({ messageId, userId, recipientId });
+
+    if (user) {
+      log(`[messageSeen] ${recipientId} from ${userId}`);
+      socket.broadcast.to(user.roomId).emit(actions.messageSeen, {
+        messagesId: [messageId],
+        userId: userId,
+        recipientId: recipientId,
+      });
+    }
   });
 
   socket.on(actions.disconnectRoom, () => {
