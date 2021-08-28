@@ -1,27 +1,59 @@
-process.env.TZ = "Europe/Amsterdam";
+const { log } = require("./shared/logger");
+const dateFormat = require("dateformat");
+
 const express = require("express");
+const bodyParser = require("body-parser");
 const app = express();
 const socket = require("socket.io");
-
 const cors = require("cors");
+
 const {
   joinedUserHandler,
   joinedUsersHandler,
   getUserHandler,
+  messageReceivedHandler,
   disconnectUserHandler,
-} = require("./dummyuser");
+} = require("./connectedUsers");
 const actions = require("./socketIoActionTypes");
-const dateFormat = require("dateformat");
-const { log } = require("./shared/logger");
+const { getFriendsHandlers } = require("./users");
+const {
+  getUserMessagesHandler,
+  getNextMessageIdHandler,
+  addMessageHandler,
+  updateMessageStatusHandler,
+} = require("./messages");
+
+const port = process.env.PORT || 8000;
 
 app.use(express());
+app.use(
+  cors({
+    origin:
+      "http://localhost:3000" ||
+      "http://127.0.0.1:3000" ||
+      "192.168.0.157:3000",
+    credentials: true,
+  })
+);
+app.use(bodyParser.json());
+// app.use(express.urlencoded({ extended: true }));
 
-const port = 8000;
+app.post("/friendList", (req, res) => {
+  log(`[POST REQUEST] /friendList requested by ${req.body.userId}`);
+  const friends = getFriendsHandlers(req.body.userId);
+  res.writeHead(201, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(friends));
+});
 
-app.use(cors());
+app.post("/messages", (req, res) => {
+  log(`[POST REQUEST] /messages requested by ${req.body.userId}`);
+  const messages = getUserMessagesHandler(req.body.userId);
+  res.writeHead(201, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(messages));
+});
 
 let server = app.listen(port, () => {
-  log(`[START] Server is running: ${port}`, "green");
+  log(`[START] Listening on port: ${port}`, "green");
 });
 
 const io = socket(server);
@@ -62,7 +94,7 @@ io.on(actions.connection, (socket) => {
   socket.on(
     actions.sendMessage,
     ({ senderId, recipientId, timestamp, message }) => {
-      const user = getUserHandler(socket.id, recipientId);
+      const user = getUserHandler(socket.id);
 
       if (user) {
         log(`[message] ${senderId} to ${recipientId}`);
@@ -75,6 +107,18 @@ io.on(actions.connection, (socket) => {
       }
     }
   );
+
+  socket.on(actions.messageStatus, ({ userId, recipientId }) => {
+    const senderId = messageReceivedHandler(userId, recipientId);
+    console.log(senderId);
+    // socketId, userId, recipientId, RoomId
+
+    socket.broadcast.to(senderId.roomId).emit(actions.messageReceived, {
+      userId: senderId.userId,
+      socketId: senderId.socketId,
+      recipientId: senderId.recipientId,
+    });
+  });
 
   socket.on(actions.disconnectRoom, () => {
     const user = disconnectUserHandler(socket.id);

@@ -7,7 +7,7 @@ import * as socketIoActions from "../shared/socketIoActionTypes";
 import { toDecrypt, toEncrypt } from "../shared/aes";
 
 import HorizontalLine from "../components/UI/HorizontalLine/HorizontalLine";
-import useFetchJson from "../hooks/useFetchJson";
+import useFetch from "../hooks/useFetchJson";
 import DivOverflowY from "../components/UI/DivOverflowY/DivOverflowY";
 import TextArea from "../components/UI/TextArea/TextArea";
 import IcoSendMessage from "../assets/ico/ico-send-message";
@@ -26,16 +26,16 @@ function Chat({
   socketProcess,
 }) {
   const dateFormat = require("dateformat");
-  const [fetchedFriends, setFetchedFriends] = useFetchJson(
-    "./json/friendList.json",
+  const [fetchedFriends, setFetchedFriends] = useFetch(
+    "/friendList",
     ["inputMessage", "userColor"],
-    isAuth
+    isAuth,
+    { userId: authUserId }
   );
-  const fetchedUserMessages = useFetchJson(
-    "./json/userMessages1.json",
-    null,
-    isAuth
-  )[0];
+  const fetchedUserMessages = useFetch("/messages", null, isAuth, {
+    userId: authUserId,
+  })[0];
+
   const [userMessages, setUserMessages] = useState([]);
   const [isActiveChat, setIsActiveChat] = useState(null);
   const [indexOfActiveChat, setIndexOfActiveChat] = useState(null);
@@ -135,15 +135,22 @@ function Chat({
           },
           ...prevState,
         ]);
+
+        // if message is received by another client then
+        // notify the server
+        if (recipientId !== authUserId) return;
+
+        console.log(authUserId);
+        console.log(recipientId);
+        console.log(senderId);
+
+        socket.emit(socketIoActions.messageStatus, {
+          userId: authUserId,
+          recipientId: senderId,
+        });
       }
     );
   }, [socket]);
-
-  useEffect(() => {
-    console.log(fetchedFriends);
-  }, [fetchedFriends]);
-
-  console.log(indexOfActiveChat);
 
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
     // if no users fetched or user's chat is already active
