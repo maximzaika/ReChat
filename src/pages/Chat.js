@@ -5,6 +5,7 @@ import * as actions from "../store/actions";
 import io from "socket.io-client";
 import * as socketIoActions from "../shared/socketIoActionTypes";
 import { toDecrypt, toEncrypt } from "../shared/aes";
+import { v4 as uuid } from "uuid";
 
 import HorizontalLine from "../components/UI/HorizontalLine/HorizontalLine";
 import useFetch from "../hooks/useFetchJson";
@@ -15,6 +16,7 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
+import dateFormat from "dateformat";
 
 const socket = io.connect("/");
 
@@ -32,11 +34,16 @@ function Chat({
     isAuth,
     { userId: authUserId }
   );
-  const fetchedUserMessages = useFetch("/messages", null, isAuth, {
-    userId: authUserId,
-  })[0];
+  const [fetchedUserMessages, setFetchedUserMessages] = useFetch(
+    "/messages",
+    null,
+    isAuth,
+    {
+      userId: authUserId,
+    }
+  );
 
-  const [userMessages, setUserMessages] = useState([]);
+  // const [userMessages, setUserMessages] = useState([]);
   const [isActiveChat, setIsActiveChat] = useState(null);
   const [indexOfActiveChat, setIndexOfActiveChat] = useState(null);
   const history = useHistory();
@@ -55,9 +62,6 @@ function Chat({
       }
     }
   }, [fetchedFriends, isActiveChat]);
-
-  // temporary message id
-  const [id, setId] = useState(1000);
 
   const onInputMessageHandler = (value) => {
     const tempUsers = [...fetchedFriends];
@@ -79,12 +83,48 @@ function Chat({
     const strippedMessage = message.split(" ").join("").split("\n").join("");
     if (!strippedMessage.length || !senderId || !recipientId) return;
 
+    const temporaryId = uuid();
+    const timestamp = dateFormat(new Date(), "isoDateTime");
     const encryptedMessage = toEncrypt(message);
     socket.emit(socketIoActions.sendMessage, {
+      temporaryId: temporaryId,
       senderId: senderId,
       recipientId: recipientId,
-      timestamp: dateFormat(new Date(), "isoDateTime"),
+      timestamp: timestamp,
       message: encryptedMessage,
+    });
+
+    setFetchedUserMessages((prevState) => {
+      const currentMessages = { ...prevState };
+      currentMessages[recipientId] = [
+        {
+          id: temporaryId,
+          senderId: senderId,
+          recipientId: recipientId,
+          timestamp: timestamp,
+          message: encryptedMessage,
+          messageStatus: -1,
+        },
+        ...currentMessages[recipientId],
+      ];
+      return currentMessages;
+    });
+
+    setFetchedFriends((prevState) => {
+      const _fetchedFriends = [...prevState];
+      let indexSender = -1;
+      if (senderId === authUserId) {
+        indexSender = _fetchedFriends.findIndex(
+          (user) => senderId === user.userId
+        );
+      } else {
+        indexSender = _fetchedFriends.findIndex((user) => senderId === user.id);
+      }
+
+      if (indexSender === -1) return [...prevState];
+      _fetchedFriends[indexSender].lastMessage = encryptedMessage;
+      _fetchedFriends[indexSender].time = timestamp;
+      return _fetchedFriends;
     });
 
     // reset input form
@@ -110,7 +150,6 @@ function Chat({
     socket.on(
       socketIoActions.message,
       ({ id, senderId, recipientId, timestamp, message, messageStatus }) => {
-        const decryptedMessage = toDecrypt(message);
         const date = new Date();
 
         if (senderId === _isActiveChat.current) {
@@ -135,28 +174,37 @@ function Chat({
           }
 
           if (indexSender === -1) return [...prevState];
-          _fetchedFriends[indexSender].lastMessage = decryptedMessage;
+          _fetchedFriends[indexSender].lastMessage = message;
           _fetchedFriends[indexSender].time = dateFormat(date, "isoDateTime");
           return _fetchedFriends;
         });
 
-        setUserMessages((prevState) => [
-          {
-            id: id,
-            senderId: senderId,
-            recipientId: recipientId,
-            timestamp: timestamp,
-            message: decryptedMessage,
-            messageStatus: messageStatus,
-          },
-          ...prevState,
-        ]);
+        setFetchedUserMessages((prevState) => {
+          const currentMessages = { ...prevState };
+          let user = senderId === authUserId ? recipientId : senderId;
+          currentMessages[user] = [
+            {
+              id: id,
+              senderId: senderId,
+              recipientId: recipientId,
+              timestamp: timestamp,
+              message: message,
+              messageStatus: -1,
+            },
+            ...currentMessages[user],
+          ];
+          return currentMessages;
+        });
 
         // if message is received by another client then
         // notify the server
-        if (recipientId !== authUserId && _isActiveChat.current !== senderId)
-          return;
-
+        console.log(recipientId);
+        console.log(authUserId);
+        console.log(_isActiveChat);
+        console.log(senderId);
+        //recipientId !== authUserId &&
+        if (_isActiveChat.current === senderId) return;
+        console.log("received");
         socket.emit(socketIoActions.messageStatus, {
           userId: authUserId,
           recipientId: senderId,
@@ -165,20 +213,42 @@ function Chat({
     );
 
     socket.on(
+      socketIoActions.messageSent,
+      ({ temporaryMessageId, newMessageId, userId, recipientId }) => {
+        if (userId !== authUserId) return;
+
+        setFetchedUserMessages((prevState) => {
+          const currentMessages = { ...prevState };
+          let _userId = userId === authUserId ? recipientId : userId;
+
+          const index = currentMessages[_userId].findIndex(
+            (message) => message.id === temporaryMessageId
+          );
+          if (index > -1) {
+            currentMessages[_userId][index].id = newMessageId;
+            currentMessages[_userId][index].messageStatus = 0;
+          }
+          return currentMessages;
+        });
+      }
+    );
+
+    socket.on(
       socketIoActions.messageReceived,
       ({ messagesId, userId, recipientId }) => {
         if (userId !== authUserId) return;
-        setUserMessages((prevState) => {
-          const currentMessages = [...prevState];
+
+        setFetchedUserMessages((prevState) => {
+          const currentMessages = { ...prevState };
+          let _userId = userId === authUserId ? recipientId : userId;
+
           for (let messageId of messagesId) {
-            const index = currentMessages.findIndex(
-              (message) =>
-                message.id === messageId &&
-                message.senderId === userId &&
-                message.recipientId === recipientId
+            const index = currentMessages[_userId].findIndex(
+              (message) => message.id === messageId
             );
-            if (index > -1) currentMessages[index].messageStatus = 1;
+            if (index > -1) currentMessages[_userId][index].messageStatus = 1;
           }
+          console.log("received");
           return currentMessages;
         });
       }
@@ -188,22 +258,30 @@ function Chat({
       socketIoActions.messageSeen,
       ({ messagesId, userId, recipientId }) => {
         if (userId !== authUserId) return;
-        setUserMessages((prevState) => {
-          const currentMessages = [...prevState];
+        setFetchedUserMessages((prevState) => {
+          const currentMessages = { ...prevState };
+          let _userId = userId === authUserId ? recipientId : userId;
+
           for (let messageId of messagesId) {
-            const index = currentMessages.findIndex(
-              (message) =>
-                message.id === messageId &&
-                message.senderId === userId &&
-                message.recipientId === recipientId
+            const index = currentMessages[_userId].findIndex(
+              (message) => message.id === messageId
             );
-            if (index > -1) currentMessages[index].messageStatus = 2;
+            console.log(messageId);
+            console.log(index);
+            console.log(currentMessages[_userId][index]);
+            if (index > -1) currentMessages[_userId][index].messageStatus = 2;
           }
+
+          console.log("seen");
           return currentMessages;
         });
       }
     );
   }, [socket]);
+
+  useEffect(() => {
+    console.log(fetchedUserMessages);
+  }, [fetchedUserMessages]);
 
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
     // if no users fetched or user's chat is already active
@@ -222,27 +300,14 @@ function Chat({
         socket.emit(socketIoActions.disconnectRoom);
       }
     }
-
-    // match clicked user with their message && ensure that
-    // authenticated user receives their messages ONLY
-    const messagesArr = [];
-    for (let message of fetchedUserMessages) {
-      if (
-        (message.senderId === recipientId ||
-          message.recipientId === recipientId) &&
-        (message.senderId === authUserId || message.recipientId === authUserId)
-      ) {
-        messagesArr.push(message);
-      }
+    let _fetchedMessages = { ...fetchedUserMessages };
+    // let userMessages = [];
+    if (!(recipientId in _fetchedMessages)) {
+      _fetchedMessages = { ...fetchedUserMessages, [recipientId]: [] };
     }
 
-    const sortedMessages = messagesArr
-      .sort((a, b) => (new Date(a).getTime() > new Date(b).getTime() ? 1 : -1))
-      .map((m) => {
-        return { ...m, message: toDecrypt(m.message) };
-      });
-
-    setUserMessages(sortedMessages);
+    setFetchedUserMessages(_fetchedMessages);
+    // setUserMessages(userMessages);
     setIsActiveChat(recipientId);
     setIndexOfActiveChat(index);
     history.push("/chat/" + recipientId);
@@ -305,6 +370,8 @@ function Chat({
                   userColor,
                 } = friend;
 
+                console.log(lastMessage);
+
                 return (
                   <li
                     key={id}
@@ -334,7 +401,7 @@ function Chat({
                           </span>
                         </div>
                         <p className="my-0 truncate text-sm italic text-gray-400">
-                          {lastMessage}
+                          {toDecrypt(lastMessage)}
                         </p>
                       </div>
                     </div>
@@ -377,9 +444,9 @@ function Chat({
 
         <ChatUserMessages
           isActiveChat={isActiveChat}
-          messages={userMessages}
+          messages={fetchedUserMessages[isActiveChat]}
           authUserId={authUserId}
-          setMessages={(messages) => setUserMessages(messages)}
+          setMessages={(messages) => {}}
         />
 
         {indexOfActiveChat !== null && (

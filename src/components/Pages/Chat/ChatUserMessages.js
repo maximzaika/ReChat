@@ -1,5 +1,7 @@
 import React, { Fragment } from "react";
 import DivOverflowY from "../../UI/DivOverflowY/DivOverflowY";
+import { toDecrypt } from "../../../shared/aes";
+import LoadingIndicator from "../../UI/LoadingIndicator/LoadingIndicator";
 
 export default function ChatUserMessages({
   isActiveChat,
@@ -17,19 +19,19 @@ export default function ChatUserMessages({
       tempMessage[index].showTime = false;
     }
 
-    setMessages(tempMessage);
+    // setMessages(tempMessage);
   };
 
   return (
     <Fragment>
-      {isActiveChat && (
+      {isActiveChat && messages && (
         <DivOverflowY className="flex flex-col-reverse pl-2 pr-4">
           {messages.map((message, index) => {
             const date = new Date(message.timestamp);
             const hours = date.getHours();
             const minutes = date.getMinutes();
             const time = `${hours}:${minutes}`;
-            const incomingMessage = message.message.split("\n");
+            const incomingMessage = toDecrypt(message.message).split("\n");
 
             // Sent messages are always on the right
             // while received messages are always on the left
@@ -39,7 +41,16 @@ export default function ChatUserMessages({
             }
 
             let messageStatus = "sent";
-            if (message.messageStatus === 0) {
+            if (message.messageStatus === -1) {
+              messageStatus = (
+                <LoadingIndicator
+                  show={message.messageStatus === -1}
+                  size="Small"
+                  color="White"
+                  marginRight="mr-3"
+                />
+              );
+            } else if (message.messageStatus === 0) {
               messageStatus = "sent";
             } else if (message.messageStatus === 1) {
               messageStatus = "received";

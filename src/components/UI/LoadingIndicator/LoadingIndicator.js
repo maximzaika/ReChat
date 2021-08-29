@@ -1,31 +1,23 @@
-import { Fragment } from "react";
+import React from "react";
+import PropTypes from "prop-types";
 import "./LoadingIndicator.css";
 
 export default function LoadingIndicator({
-  show,
+  show = false,
   showText,
-  size,
-  color,
-  marginLeft,
-  marginRight,
-  marginTop,
-  className,
-  ...props
+  size = "",
+  color = "",
+  marginLeft = "",
+  marginRight = "",
+  marginTop = "",
+  className = "",
 }) {
-  const sizeClass = size ? size : "";
-  const customClass = className ? className : "";
-  const colorClass = color ? color : "";
-  const showIndicator = show !== undefined ? show : true;
-  const ml = marginLeft ? marginLeft : "";
-  const mr = marginRight ? marginRight : "";
-  const mt = marginTop ? marginTop : "";
-
   return (
-    <Fragment>
-      {showIndicator && (
-        <Fragment>
+    <>
+      {show && (
+        <>
           <div
-            className={`${customClass} LoadingRing ${sizeClass} ${colorClass} ${mt} ${ml} ${mr}`}
+            className={`${className} LoadingRing ${size} ${color} ${marginTop} ${marginLeft} ${marginRight}`}
           >
             <div />
             <div />
@@ -33,8 +25,18 @@ export default function LoadingIndicator({
             <div />
           </div>
           {showText && <p className="italic my-5">Loading...</p>}
-        </Fragment>
+        </>
       )}
-    </Fragment>
+    </>
   );
 }
+
+LoadingIndicator.propTypes = {
+  size: PropTypes.oneOf(["Small", "Medium", undefined]),
+  className: PropTypes.string,
+  color: PropTypes.oneOf(["Light", "Dark", "White", undefined]),
+  show: PropTypes.bool,
+  marginLeft: PropTypes.string,
+  marginTop: PropTypes.string,
+  marginRight: PropTypes.string,
+};

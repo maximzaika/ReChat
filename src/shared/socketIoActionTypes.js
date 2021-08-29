@@ -5,5 +5,6 @@ export const onlineStatus = "onlineStatus";
 export const sendMessage = "sendMessage";
 export const message = "message";
 export const messageStatus = "messageStatus";
+export const messageSent = "messageSent";
 export const messageReceived = "messageReceived";
 export const messageSeen = "messageSeen";

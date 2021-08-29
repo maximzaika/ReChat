@@ -1,4 +1,5 @@
 const dateFormat = require("dateformat");
+const { v4: uuid } = require("uuid");
 
 // messageStatus = 0 = sent
 // messageStatus = 1 = received
@@ -72,7 +73,7 @@ const messages = [
   },
 ];
 
-const checkPendingMessagesHandler = (userId, messageStatus) => {
+const checkPendingMessagesHandler = (userId, recipientId, messageStatus) => {
   /* contains pending messages in the following format:
      [
         { userId : [messageId, messageId, messageId...] },
@@ -83,6 +84,7 @@ const checkPendingMessagesHandler = (userId, messageStatus) => {
   for (let message of messages) {
     if (
       message.recipientId === userId &&
+      message.senderId === recipientId &&
       message.messageStatus === messageStatus
     ) {
       message.messageStatus = messageStatus + 1;
@@ -110,15 +112,79 @@ const checkPendingMessagesHandler = (userId, messageStatus) => {
   return messageIds;
 };
 
-const getUserMessagesHandler = (userId, messageStatus) => {
-  const messageIds = checkPendingMessagesHandler(userId, messageStatus);
+const getUserMessagesHandler = (userId, recipientId, messageStatus) => {
+  const messageIds = checkPendingMessagesHandler(
+    userId,
+    recipientId,
+    messageStatus
+  );
 
-  return [
-    messages.filter(
-      (message) => message.senderId === userId || message.recipientId === userId
-    ),
-    messageIds,
-  ];
+  const _messages = {};
+  console.log(userId);
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].senderId === userId || messages[i].recipientId === userId) {
+      if (messages[i].senderId === userId) {
+        if (messages[i].recipientId in _messages) {
+          _messages[messages[i].recipientId].push(messages[i]);
+        } else {
+          _messages[messages[i].recipientId] = [messages[i]];
+        }
+      } else {
+        if (messages[i].senderId in _messages) {
+          _messages[messages[i].senderId].push(messages[i]);
+        } else {
+          _messages[messages[i].senderId] = [messages[i]];
+        }
+      }
+    }
+  }
+
+  // const _messages = [];
+  // for (let message of messages) {
+  //   if (message.senderId === userId || message.recipientId === userId) {
+  //     if (!_messages.length) {
+  //       _messages.push({
+  //         [message.senderId]: [message],
+  //       });
+  //     } else {
+  //       let found = false;
+  //       for (let messageId of _messages) {
+  //         if (message.senderId in messageId) {
+  //           messageId[message.senderId].push(message);
+  //           found = true;
+  //           break;
+  //         }
+  //       }
+  //
+  //       if (!found)
+  //         _messages.push({
+  //           [message.senderId]: [message],
+  //         });
+  //     }
+  //   }
+  // }
+  //
+  // console.log(_messages);
+  //
+  // for (let user of _messages) {
+  //   const userId = Object.keys(user);
+  //
+  //   user[userId].sort((a, b) =>
+  //     new Date(a).getTime() > new Date(b).getTime() ? 1 : -1
+  //   );
+  // }
+
+  return [_messages, messageIds];
+
+  // return [
+  //   messages
+  //     .filter(
+  //       (message) =>
+  //         message.senderId === userId || message.recipientId === userId
+  //     )
+  //     .sort((a, b) => (new Date(a).getTime() > new Date(b).getTime() ? 1 : -1)),
+  //   messageIds,
+  // ];
 };
 
 const getNextMessageIdHandler = () => {
@@ -133,9 +199,9 @@ const addMessageHandler = (
   timestamp,
   encryptedMessage
 ) => {
-  const newMessageId = getNextMessageIdHandler();
+  // const newMessageId = getNextMessageIdHandler();
   const message = {
-    id: newMessageId,
+    id: uuid(),
     senderId: senderId,
     recipientId: recipientId,
     timestamp: dateFormat(timestamp, "isoDateTime"),
