@@ -16,6 +16,7 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
+import dateFormat from "dateformat";
 
 const socket = io.connect("/");
 
@@ -109,6 +110,23 @@ function Chat({
       return currentMessages;
     });
 
+    setFetchedFriends((prevState) => {
+      const _fetchedFriends = [...prevState];
+      let indexSender = -1;
+      if (senderId === authUserId) {
+        indexSender = _fetchedFriends.findIndex(
+          (user) => senderId === user.userId
+        );
+      } else {
+        indexSender = _fetchedFriends.findIndex((user) => senderId === user.id);
+      }
+
+      if (indexSender === -1) return [...prevState];
+      _fetchedFriends[indexSender].lastMessage = encryptedMessage;
+      _fetchedFriends[indexSender].time = timestamp;
+      return _fetchedFriends;
+    });
+
     // reset input form
     onInputMessageHandler("");
   };
@@ -156,7 +174,7 @@ function Chat({
           }
 
           if (indexSender === -1) return [...prevState];
-          _fetchedFriends[indexSender].lastMessage = toDecrypt(message);
+          _fetchedFriends[indexSender].lastMessage = message;
           _fetchedFriends[indexSender].time = dateFormat(date, "isoDateTime");
           return _fetchedFriends;
         });
@@ -352,6 +370,8 @@ function Chat({
                   userColor,
                 } = friend;
 
+                console.log(lastMessage);
+
                 return (
                   <li
                     key={id}
@@ -381,7 +401,7 @@ function Chat({
                           </span>
                         </div>
                         <p className="my-0 truncate text-sm italic text-gray-400">
-                          {lastMessage}
+                          {toDecrypt(lastMessage)}
                         </p>
                       </div>
                     </div>

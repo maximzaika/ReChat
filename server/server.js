@@ -15,7 +15,7 @@ const {
   disconnectUserHandler,
 } = require("./connectedUsers");
 const actions = require("./socketIoActionTypes");
-const { getFriendsHandlers } = require("./users");
+const { getFriendsHandlers, updateUsersLastMessage } = require("./users");
 const {
   getUserMessagesHandler,
   getNextMessageIdHandler,
@@ -113,8 +113,6 @@ io.on(actions.connection, (socket) => {
     });
 
     const messages = getUserMessagesHandler(userId, recipientId, 1);
-    console.log("userId", userId);
-    console.log("recipientId", recipientId);
     for (let pendingSenders of messages[1]) {
       // logically senders become recipients because we need to notify them that
       // the message has been received
@@ -147,6 +145,7 @@ io.on(actions.connection, (socket) => {
           message
         );
         log(`[sendMessage (message)] ${senderId} to ${recipientId}`);
+        updateUsersLastMessage(senderId, recipientId, message);
         socket.broadcast.to(user.roomId).emit(actions.message, messageSent);
         log(`[sendMessage (messageSent)] ${senderId} to ${recipientId}`);
         socket.emit(actions.messageSent, {
