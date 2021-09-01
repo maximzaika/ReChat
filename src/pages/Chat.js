@@ -66,6 +66,23 @@ function Chat({
   const onInputMessageHandler = (value) => {
     const tempUsers = [...fetchedFriends];
     tempUsers[indexOfActiveChat].inputMessage = value;
+
+    // notify another user that current user is not typing
+    if (value.length === 0) {
+      socket.emit(socketIoActions.typingStatus, {
+        isTyping: true,
+        roomId: fetchedFriends[indexOfActiveChat].uniqueId,
+      });
+    }
+
+    // notify another user that current user is typing
+    if (value.length > 5) {
+      socket.emit(socketIoActions.typingStatus, {
+        isTyping: true,
+        roomId: fetchedFriends[indexOfActiveChat].uniqueId,
+      });
+    }
+
     setFetchedFriends(tempUsers);
   };
 
@@ -148,6 +165,20 @@ function Chat({
     );
 
     socket.on(
+      socketIoActions.typingStatus,
+      ({ recipientId, socketId, userId, typingStatus }) => {
+        if (recipientId !== authUserId) return;
+
+        setFetchedFriends((prevState) => {
+          const users = [...prevState];
+          const index = users.findIndex((user) => user.id === userId);
+          users[index].typingState = typingStatus;
+          return users;
+        });
+      }
+    );
+
+    socket.on(
       socketIoActions.message,
       ({ id, senderId, recipientId, timestamp, message, messageStatus }) => {
         const date = new Date();
@@ -198,13 +229,8 @@ function Chat({
 
         // if message is received by another client then
         // notify the server
-        console.log(recipientId);
-        console.log(authUserId);
-        console.log(_isActiveChat);
-        console.log(senderId);
         //recipientId !== authUserId &&
         if (_isActiveChat.current === senderId) return;
-        console.log("received");
         socket.emit(socketIoActions.messageStatus, {
           userId: authUserId,
           recipientId: senderId,
@@ -280,8 +306,8 @@ function Chat({
   }, [socket]);
 
   useEffect(() => {
-    console.log(fetchedUserMessages);
-  }, [fetchedUserMessages]);
+    console.log(fetchedFriends);
+  }, [fetchedFriends]);
 
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
     // if no users fetched or user's chat is already active

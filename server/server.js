@@ -189,6 +189,23 @@ io.on(actions.connection, (socket) => {
     }
   });
 
+  // boolean
+  socket.on(actions.typingStatus, ({ isTyping, roomId }) => {
+    const user = joinedUsersHandler(socket.id);
+
+    console.log(roomId);
+
+    if (user) {
+      log(`[typingStatus] ${user.userId} typing to ${user.recipientId}`);
+      io.to(user.roomId).emit(actions.onlineStatus, {
+        userId: user.userId,
+        socketId: user.socketId,
+        recipientId: user.recipientId,
+        typingState: isTyping,
+      });
+    }
+  });
+
   socket.on(actions.disconnectRoom, () => {
     const user = disconnectUserHandler(socket.id);
     const date = new Date();
