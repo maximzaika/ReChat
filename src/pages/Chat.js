@@ -42,8 +42,6 @@ function Chat({
       userId: authUserId,
     }
   );
-
-  // const [userMessages, setUserMessages] = useState([]);
   const [isActiveChat, setIsActiveChat] = useState(null);
   const [indexOfActiveChat, setIndexOfActiveChat] = useState(null);
   const history = useHistory();
@@ -66,6 +64,35 @@ function Chat({
   const onInputMessageHandler = (value) => {
     const tempUsers = [...fetchedFriends];
     tempUsers[indexOfActiveChat].inputMessage = value;
+
+    // Set typing status on the sender client side to prevent
+    // posting "sending status" to the socket on each key press
+    if (tempUsers[indexOfActiveChat].userTyping === undefined) {
+      tempUsers[indexOfActiveChat].userTyping = false;
+    }
+
+    console.log(tempUsers[indexOfActiveChat].userTyping);
+
+    // notify another user that current user is not typing
+    if (value.length === 0 && tempUsers[indexOfActiveChat].userTyping) {
+      console.log("typing = 0");
+      tempUsers[indexOfActiveChat].userTyping = false;
+      socket.emit(socketIoActions.typingStatus, {
+        isTyping: false,
+        roomId: tempUsers[indexOfActiveChat].uniqueId,
+      });
+    }
+
+    // notify another user that current user is typing
+    if (value.length > 0 && !tempUsers[indexOfActiveChat].userTyping) {
+      tempUsers[indexOfActiveChat].userTyping = true;
+      console.log("typing > 0");
+      socket.emit(socketIoActions.typingStatus, {
+        isTyping: true,
+        roomId: tempUsers[indexOfActiveChat].uniqueId,
+      });
+    }
+
     setFetchedFriends(tempUsers);
   };
 
@@ -148,10 +175,23 @@ function Chat({
     );
 
     socket.on(
+      socketIoActions.typingStatus,
+      ({ recipientId, userId, typingState }) => {
+        console.log("typing >", typingState);
+        if (recipientId !== authUserId) return;
+
+        setFetchedFriends((prevState) => {
+          const users = [...prevState];
+          const index = users.findIndex((user) => user.id === userId);
+          users[index].typingState = typingState;
+          return users;
+        });
+      }
+    );
+
+    socket.on(
       socketIoActions.message,
       ({ id, senderId, recipientId, timestamp, message, messageStatus }) => {
-        const date = new Date();
-
         if (senderId === _isActiveChat.current) {
           socket.emit(socketIoActions.messageSeen, {
             messageId: id,
@@ -159,6 +199,9 @@ function Chat({
             recipientId: recipientId,
           });
         }
+
+        let currentActiveChat = isActiveChat;
+        let currentIndexOfActiveChat = indexOfActiveChat;
 
         setFetchedFriends((prevState) => {
           const _fetchedFriends = [...prevState];
@@ -175,7 +218,20 @@ function Chat({
 
           if (indexSender === -1) return [...prevState];
           _fetchedFriends[indexSender].lastMessage = message;
-          _fetchedFriends[indexSender].time = dateFormat(date, "isoDateTime");
+          _fetchedFriends[indexSender].time = timestamp;
+
+          // sort users with new messages to the top of the friend list
+          _fetchedFriends.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+          // if chat is active, then need to keep track of the new index after the sort
+          // to ensure that it doesn't get closed
+          if (_isActiveChat.current) {
+            const newActiveUser = _fetchedFriends.findIndex(
+              (user) => user.id === _isActiveChat.current
+            );
+            setIndexOfActiveChat(newActiveUser);
+          }
+
           return _fetchedFriends;
         });
 
@@ -198,13 +254,8 @@ function Chat({
 
         // if message is received by another client then
         // notify the server
-        console.log(recipientId);
-        console.log(authUserId);
-        console.log(_isActiveChat);
-        console.log(senderId);
         //recipientId !== authUserId &&
         if (_isActiveChat.current === senderId) return;
-        console.log("received");
         socket.emit(socketIoActions.messageStatus, {
           userId: authUserId,
           recipientId: senderId,
@@ -280,8 +331,8 @@ function Chat({
   }, [socket]);
 
   useEffect(() => {
-    console.log(fetchedUserMessages);
-  }, [fetchedUserMessages]);
+    console.log(fetchedFriends);
+  }, [fetchedFriends]);
 
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
     // if no users fetched or user's chat is already active
@@ -429,7 +480,11 @@ function Chat({
                 {fetchedFriends[indexOfActiveChat].name}
               </h1>
               <h2 className="italic font-normal text-sm my-0">
-                {fetchedFriends[indexOfActiveChat].onlineState
+                {fetchedFriends[indexOfActiveChat].typingState &&
+                fetchedFriends[indexOfActiveChat].onlineState
+                  ? "Typing..."
+                  : !fetchedFriends[indexOfActiveChat].typingState &&
+                    fetchedFriends[indexOfActiveChat].onlineState
                   ? "Online now"
                   : `Last seen ${getTime(
                       fetchedFriends[indexOfActiveChat].lastOnline,

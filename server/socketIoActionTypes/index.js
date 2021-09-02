@@ -4,8 +4,10 @@ module.exports = Object.freeze({
   disconnectRoom: "disconnectRoom",
   joinRoom: "joinRoom",
   onlineStatus: "onlineStatus",
+  typingStatus: "typingStatus",
   sendMessage: "sendMessage",
   message: "message",
+
   messageStatus: "messageStatus",
   messageSent: "messageSent",
   messageReceived: "messageReceived",

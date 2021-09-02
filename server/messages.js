@@ -120,7 +120,6 @@ const getUserMessagesHandler = (userId, recipientId, messageStatus) => {
   );
 
   const _messages = {};
-  console.log(userId);
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i].senderId === userId || messages[i].recipientId === userId) {
       if (messages[i].senderId === userId) {
@@ -139,52 +138,7 @@ const getUserMessagesHandler = (userId, recipientId, messageStatus) => {
     }
   }
 
-  // const _messages = [];
-  // for (let message of messages) {
-  //   if (message.senderId === userId || message.recipientId === userId) {
-  //     if (!_messages.length) {
-  //       _messages.push({
-  //         [message.senderId]: [message],
-  //       });
-  //     } else {
-  //       let found = false;
-  //       for (let messageId of _messages) {
-  //         if (message.senderId in messageId) {
-  //           messageId[message.senderId].push(message);
-  //           found = true;
-  //           break;
-  //         }
-  //       }
-  //
-  //       if (!found)
-  //         _messages.push({
-  //           [message.senderId]: [message],
-  //         });
-  //     }
-  //   }
-  // }
-  //
-  // console.log(_messages);
-  //
-  // for (let user of _messages) {
-  //   const userId = Object.keys(user);
-  //
-  //   user[userId].sort((a, b) =>
-  //     new Date(a).getTime() > new Date(b).getTime() ? 1 : -1
-  //   );
-  // }
-
   return [_messages, messageIds];
-
-  // return [
-  //   messages
-  //     .filter(
-  //       (message) =>
-  //         message.senderId === userId || message.recipientId === userId
-  //     )
-  //     .sort((a, b) => (new Date(a).getTime() > new Date(b).getTime() ? 1 : -1)),
-  //   messageIds,
-  // ];
 };
 
 const getNextMessageIdHandler = () => {

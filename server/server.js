@@ -47,7 +47,9 @@ const io = socket(server);
 
 app.post("/friendList", (req, res) => {
   log(`[post] /friendList requested by ${req.body.userId}`);
-  const friends = getFriendsHandlers(req.body.userId);
+  const friends = getFriendsHandlers(req.body.userId).sort(
+    (a, b) => new Date(b.time) - new Date(a.time)
+  );
   res.writeHead(201, { "Content-Type": "application/json" });
   res.end(JSON.stringify(friends));
 });
@@ -185,6 +187,22 @@ io.on(actions.connection, (socket) => {
         messagesId: [messageId],
         userId: userId,
         recipientId: recipientId,
+      });
+    }
+  });
+
+  // boolean
+  socket.on(actions.typingStatus, ({ isTyping, roomId }) => {
+    const user = joinedUsersHandler(socket.id, roomId);
+
+    console.log("user > ", user);
+
+    if (user) {
+      log(`[typingStatus] ${user.recipientId} typing to ${user.userId}`);
+      socket.broadcast.to(user.roomId).emit(actions.typingStatus, {
+        userId: user.recipientId,
+        recipientId: user.userId,
+        typingState: isTyping,
       });
     }
   });
