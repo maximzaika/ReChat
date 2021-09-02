@@ -1,3 +1,4 @@
+const dateFormat = require("dateformat");
 let users = [
   {
     id: "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
@@ -468,6 +469,7 @@ const updateUsersLastMessage = (senderId, recipientId, encryptedMessage) => {
       (user.id === recipientId && user.userId === senderId)
     ) {
       user.lastMessage = encryptedMessage;
+      user.time = dateFormat(new Date(), "isoDateTime");
     }
     return user;
   });
