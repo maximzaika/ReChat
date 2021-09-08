@@ -8,18 +8,18 @@ const socket = require("socket.io");
 const cors = require("cors");
 
 const {
-  joinedUserHandler,
-  joinedUsersHandler,
-  getUserHandler,
-  messageReceivedHandler,
+  newConnectedUserHandler,
+  findConnectedUserHandler,
+  checkMessageReceivedHandler,
   disconnectUserHandler,
 } = require("./connectedUsers");
 const actions = require("./socketIoActionTypes");
-const { getFriendsHandlers, updateUsersLastMessage } = require("./users");
+const { findFriendsHandler, updateUsersLastMessage } = require("./users");
 const {
   getUserMessagesHandler,
+  findPendingMessagesHandler,
   getNextMessageIdHandler,
-  addMessageHandler,
+  storeMessageHandler,
   updateMessagesStatusHandler,
   updateMessageStatusHandler,
 } = require("./messages");
@@ -46,8 +46,8 @@ let server = app.listen(port, () => {
 const io = socket(server);
 
 app.post("/friendList", (req, res) => {
-  log(`[post] /friendList requested by ${req.body.userId}`);
-  const friends = getFriendsHandlers(req.body.userId).sort(
+  log(`[post] /friendList requested by ${req.body.userId}`, "yellow");
+  const friends = findFriendsHandler(req.body.userId).sort(
     (a, b) => new Date(b.time) - new Date(a.time)
   );
   res.writeHead(201, { "Content-Type": "application/json" });
@@ -55,17 +55,21 @@ app.post("/friendList", (req, res) => {
 });
 
 app.post("/messages", (req, res) => {
-  log(`[post] /messages requested by ${req.body.userId}`);
-  const messages = getUserMessagesHandler(req.body.userId, 0);
+  log(`[post] /messages requested by ${req.body.userId}`, "yellow");
+  const messages = getUserMessagesHandler(req.body.userId);
+  const pendingMessages = findPendingMessagesHandler(req.body.userId, 0);
   res.writeHead(201, { "Content-Type": "application/json" });
-  res.end(JSON.stringify(messages[0]));
+  res.end(JSON.stringify(messages));
 
-  for (let pendingSenders of messages[1]) {
+  // if there are no pending messages, then user doesn't need to be notified
+  if (!pendingMessages.length) return;
+
+  for (let pendingSenders of pendingMessages) {
     // logically senders become recipients because we need to notify them that
     // any pending message is received
     const recipientId = Object.keys(pendingSenders)[0];
     const messagesId = pendingSenders[recipientId];
-    const senderId = messageReceivedHandler(req.body.userId, recipientId);
+    const senderId = checkMessageReceivedHandler(req.body.userId, recipientId);
 
     if (senderId) {
       log(
@@ -80,89 +84,155 @@ app.post("/messages", (req, res) => {
   }
 });
 
+/**
+ * Used for keeping track of user's online status.
+ * @param {string} socketId Unique socket id to identify the user
+ * @param {string} userId Unique id of the connected user.
+ * @param {string} recipientId Unique id of the recipient user (similar to userId).
+ * @param {Date} timestamp Current time when user's status is updated.
+ * @param {boolean} onlineStatus User's online status.
+ */
+function UserOnlineStatus(
+  socketId,
+  userId,
+  recipientId,
+  timestamp,
+  onlineStatus
+) {
+  this.socketId = socketId;
+  this.userId = userId;
+  this.recipientId = recipientId;
+  this.lastOnline = dateFormat(timestamp, "isoDateTime");
+  this.online = onlineStatus;
+}
+
+/**
+ * Used for keeping track of user's online status.
+ * @param {String[]} messagesId Unique ids of the messages that are seen.
+ * @param {string} userId Unique id of the connected user.
+ * @param {string} recipientId Unique id of the recipient user (similar to userId).
+ */
+function MessagesSeen(messagesId, userId, recipientId) {
+  this.messagesId = messagesId;
+  this.userId = userId;
+  this.recipientId = recipientId;
+}
+
 io.on(actions.connection, (socket) => {
   socket.on(actions.joinRoom, ({ userId, recipientId, roomId }) => {
-    // creates unique socket id of the connected user
-    const userOnline = joinedUsersHandler(socket.id, roomId);
-    const user = joinedUserHandler(socket.id, userId, recipientId, roomId);
     const date = new Date();
+    // creates unique socket id of the connected user
+    const user = newConnectedUserHandler(
+      socket.id,
+      userId,
+      recipientId,
+      roomId
+    );
+    // check whether there are any connected users in the room
+    const connectedUser = findConnectedUserHandler(socket.id, roomId);
 
-    if (user.new) {
-      socket.join(user.data.roomId);
-      log(
-        `[connection (joinRoom)] ${userId} joined ${recipientId}. Room ${roomId}`
+    log(
+      `[connection (joinRoom)] ${userId} joined ${recipientId}. Room ${roomId}`,
+      "green"
+    );
+    socket.join(user.roomId);
+
+    // if there are users online then let the new connected user know their status
+    if (connectedUser) {
+      log(`[connection (onlineStatus)] ${userId} notifies ${recipientId}`);
+      io.in(connectedUser.roomId).emit(
+        actions.onlineStatus,
+        new UserOnlineStatus(
+          connectedUser.socketId,
+          connectedUser.userId,
+          connectedUser.recipientId,
+          date,
+          true
+        )
       );
     }
 
-    if (userOnline) {
-      log(`[connection (onlineStatus)] ${userId} notifies ${recipientId}`);
-      io.in(userOnline.roomId).emit(actions.onlineStatus, {
-        userId: userOnline.userId,
-        socketId: userOnline.socketId,
-        recipientId: userOnline.recipientId,
-        lastOnline: dateFormat(date, "isoDateTime"),
-        online: true,
-      });
-    }
-
     // If user has opened the chat, it would show their online status
-    socket.broadcast.to(user.data.roomId).emit(actions.onlineStatus, {
-      userId: user.data.userId,
-      socketId: user.data.socketId,
-      recipientId: user.data.recipientId,
-      lastOnline: dateFormat(date, "isoDateTime"),
-      online: true,
-    });
+    socket.broadcast
+      .to(user.roomId)
+      .emit(
+        actions.onlineStatus,
+        new UserOnlineStatus(
+          user.socketId,
+          user.userId,
+          user.recipientId,
+          date,
+          true
+        )
+      );
 
-    const messages = getUserMessagesHandler(userId, recipientId, 1);
-    for (let pendingSenders of messages[1]) {
-      // logically senders become recipients because we need to notify them that
-      // the message has been received
-      const recipientId = Object.keys(pendingSenders)[0];
-      const messagesId = pendingSenders[recipientId];
-      const senderId = messageReceivedHandler(userId, recipientId);
+    // find all the messages that have status of 1 = received
+    const pendingMessages = findPendingMessagesHandler(userId, 1);
+    if (pendingMessages.length) {
+      for (let pendingSenders of pendingMessages) {
+        // logically senders become recipients because we need to notify them that
+        // the message has been received
+        const recipientId = Object.keys(pendingSenders)[0];
+        const messagesId = pendingSenders[recipientId];
+        const senderId = checkMessageReceivedHandler(userId, recipientId);
 
-      if (senderId) {
-        log(
-          `[connection (joinRoom -> messageSeen)] ${senderId.recipientId} from ${senderId.userId}`
-        );
-        socket.broadcast.to(senderId.roomId).emit(actions.messageSeen, {
-          messagesId: messagesId,
-          userId: senderId.userId,
-          recipientId: senderId.recipientId,
-        });
+        if (senderId) {
+          log(
+            `[connection (joinRoom -> messageSeen)] ${senderId.recipientId} from ${senderId.userId}`
+          );
+
+          socket.broadcast
+            .to(senderId.roomId)
+            .emit(
+              actions.messageSeen,
+              new MessagesSeen(
+                messagesId,
+                senderId.userId,
+                senderId.recipientId
+              )
+            );
+        }
       }
     }
   });
 
   socket.on(
     actions.sendMessage,
-    ({ temporaryId, senderId, recipientId, timestamp, message }) => {
-      const user = getUserHandler(socket.id);
-      if (user) {
-        const messageSent = addMessageHandler(
-          senderId,
-          recipientId,
-          timestamp,
-          message
-        );
-        log(`[sendMessage (message)] ${senderId} to ${recipientId}`);
-        updateUsersLastMessage(senderId, recipientId, message);
-        socket.broadcast.to(user.roomId).emit(actions.message, messageSent);
-        log(`[sendMessage (messageSent)] ${senderId} to ${recipientId}`);
-        socket.emit(actions.messageSent, {
-          temporaryMessageId: temporaryId,
-          newMessageId: messageSent.id,
-          userId: senderId,
-          recipientId: recipientId,
-        });
-      }
+    ({ temporaryId, senderId, recipientId, roomId, timestamp, message }) => {
+      // Temporary stores user's message to ensure that it is always delivered.
+      const messageSent = storeMessageHandler(
+        senderId,
+        recipientId,
+        timestamp,
+        message
+      );
+
+      log(`[sendMessage (message)] ${senderId} to ${recipientId}`);
+
+      // Update's friend's last message and the time of the last message.
+      updateUsersLastMessage(senderId, recipientId, message);
+
+      // Sends a message to all the users in this room
+      socket.broadcast.to(roomId).emit(actions.message, messageSent);
+
+      log(`[sendMessage (messageSent)] ${senderId} to ${recipientId}`);
+
+      /* Once the message is received by the server, server changes message's id
+      then notifies the sender that the message is sent. Client then updates
+      temporary message id with the new id of the message stored on the backend. */
+      socket.emit(actions.messageSent, {
+        temporaryMessageId: temporaryId,
+        newMessageId: messageSent.id,
+        userId: senderId,
+        recipientId: recipientId,
+      });
     }
   );
 
+  /* If user's another friend window is open, and another friend has sent the message
+  then need to notify the sender that the message is received */
   socket.on(actions.messageStatus, ({ userId, recipientId }) => {
-    const senderId = messageReceivedHandler(userId, recipientId);
-    // socketId, userId, recipientId, RoomId
+    const senderId = checkMessageReceivedHandler(userId, recipientId);
 
     if (senderId) {
       // 1 = received
@@ -179,21 +249,22 @@ io.on(actions.connection, (socket) => {
   socket.on(actions.messageSeen, ({ messageId, userId, recipientId }) => {
     updateMessageStatusHandler(recipientId, userId, 1);
     updateMessageStatusHandler(recipientId, userId, 2);
-    const user = messageReceivedHandler(recipientId, userId);
+    const user = checkMessageReceivedHandler(recipientId, userId);
 
     if (user) {
       log(`[messageSeen] ${recipientId} from ${userId}`);
-      socket.broadcast.to(user.roomId).emit(actions.messageSeen, {
-        messagesId: [messageId],
-        userId: userId,
-        recipientId: recipientId,
-      });
+      socket.broadcast
+        .to(user.roomId)
+        .emit(
+          actions.messageSeen,
+          new MessagesSeen([messageId], userId, recipientId)
+        );
     }
   });
 
   // boolean
   socket.on(actions.typingStatus, ({ isTyping, roomId }) => {
-    const user = joinedUsersHandler(socket.id, roomId);
+    const user = findConnectedUserHandler(socket.id, roomId);
 
     console.log("user > ", user);
 

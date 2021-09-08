@@ -1,41 +1,63 @@
+/**
+ * Used for creating/accessing Connected Users
+ * @param {string} socketId Unique socket id to identify the user
+ * @param {string} userId Unique id of the connected user.
+ * @param {string} recipientId Unique id of the recipient user (similar to userId).
+ * @param {string} roomId Unique room id received from the client. Usually it is
+ *                        a combination of user ids: id_id (but on the client
+ *                        side it is encrypted)
+ */
+function ConnectedUser(socketId, userId, recipientId, roomId) {
+  this.socketId = socketId;
+  this.userId = userId;
+  this.recipientId = recipientId;
+  this.roomId = roomId;
+}
+
+// Contains all the connected users
 const connectedUsers = [];
 
-// called when user decides to join the chatroom
-const joinedUserHandler = (socketId, userId, recipientId, roomId) => {
-  const user = { socketId, userId, recipientId, roomId };
-  const isConnected = connectedUsers.find(
-    (user) =>
-      user.socketId === socketId &&
-      user.userId === userId &&
-      user.recipientId === recipientId &&
-      user.roomId === roomId
-  );
-
-  // previously joined user to prevent sending them to connectedUsers
-  if (isConnected) return { new: false, data: user };
-
-  connectedUsers.push(user);
-  return { new: true, data: user };
+/**
+ * Add a new user to the array of connected users.
+ * @param {string} socketId Unique socket id to identify the user
+ * @param {string} userId Unique id of the connected user.
+ * @param {string} recipientId Unique id of the recipient user (similar to userId).
+ * @param {string} roomId Unique room id received from the client. Usually it is
+ *                        a combination of user ids: id_id (but on the client
+ *                        side it is encrypted)
+ * @return {ConnectedUser} newUser Data of a new connected user.
+ */
+const newConnectedUserHandler = (socketId, userId, recipientId, roomId) => {
+  const newUser = new ConnectedUser(socketId, userId, recipientId, roomId);
+  connectedUsers.push(newUser);
+  return newUser;
 };
 
-const joinedUsersHandler = (socketId, roomId) => {
-  return connectedUsers.find(
+/**
+ * Checks for connected users in the same room.
+ * @param {string} socketId Unique socket id to identify the user
+ * @param {string} roomId Unique room id received from the client. Usually it is
+ *                        a combination of user ids: id_id (but on the client
+ *                        side it is encrypted)
+ * @return {ConnectedUser} Users connected.
+ */
+const findConnectedUserHandler = (socketId, roomId) =>
+  connectedUsers.find(
     (user) => user.socketId !== socketId && user.roomId === roomId
   );
-};
 
-// received user's id to return the current user
-const getUserHandler = (socketId) => {
-  return connectedUsers.find((user) => user.socketId === socketId);
-};
-
-const messageReceivedHandler = (receivedFromUserId, receivedByUserId) => {
-  return connectedUsers.find(
+/**
+ * Checks whether message has been received by the receiver.
+ * @param {string} receivedFromUserId Unique id of the sender.
+ * @param {string} receivedByUserId Unique id of the receiver.
+ * @return {ConnectedUser} User that received the message.
+ */
+const checkMessageReceivedHandler = (receivedFromUserId, receivedByUserId) =>
+  connectedUsers.find(
     (user) =>
       user.userId === receivedByUserId &&
       user.recipientId === receivedFromUserId
   );
-};
 
 // called when the user leaves the chat and its object gets deleted from the array
 const disconnectUserHandler = (disconnectedUser) => {
@@ -46,9 +68,8 @@ const disconnectUserHandler = (disconnectedUser) => {
 };
 
 module.exports = {
-  joinedUserHandler,
-  joinedUsersHandler,
-  getUserHandler,
-  messageReceivedHandler,
+  newConnectedUserHandler,
+  findConnectedUserHandler,
+  checkMessageReceivedHandler,
   disconnectUserHandler,
 };
