@@ -10,6 +10,8 @@ const log = (description, color = "default", showLog = true) => {
         return console.log(description.red);
       case "green":
         return console.log(description.green);
+      case "yellow":
+        return console.log(description.yellow);
       default:
         return console.log(description);
     }

@@ -16,7 +16,6 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
-import dateFormat from "dateformat";
 
 const socket = io.connect("/");
 
@@ -71,13 +70,10 @@ function Chat({
       tempUsers[indexOfActiveChat].userTyping = false;
     }
 
-    console.log(tempUsers[indexOfActiveChat].userTyping);
-
     // notify another user that current user is not typing
     if (value.length === 0 && tempUsers[indexOfActiveChat].userTyping) {
-      console.log("typing = 0");
       tempUsers[indexOfActiveChat].userTyping = false;
-      socket.emit(socketIoActions.typingStatus, {
+      socket.emit(socketIoActions.typingState, {
         isTyping: false,
         roomId: tempUsers[indexOfActiveChat].uniqueId,
       });
@@ -86,9 +82,9 @@ function Chat({
     // notify another user that current user is typing
     if (value.length > 0 && !tempUsers[indexOfActiveChat].userTyping) {
       tempUsers[indexOfActiveChat].userTyping = true;
-      console.log("typing > 0");
-      socket.emit(socketIoActions.typingStatus, {
+      socket.emit(socketIoActions.typingState, {
         isTyping: true,
+        senderId: authUserId,
         roomId: tempUsers[indexOfActiveChat].uniqueId,
       });
     }
@@ -117,6 +113,7 @@ function Chat({
       temporaryId: temporaryId,
       senderId: senderId,
       recipientId: recipientId,
+      roomId: uniqueId,
       timestamp: timestamp,
       message: encryptedMessage,
     });
@@ -175,9 +172,8 @@ function Chat({
     );
 
     socket.on(
-      socketIoActions.typingStatus,
+      socketIoActions.typingState,
       ({ recipientId, userId, typingState }) => {
-        console.log("typing >", typingState);
         if (recipientId !== authUserId) return;
 
         setFetchedFriends((prevState) => {
@@ -199,9 +195,6 @@ function Chat({
             recipientId: recipientId,
           });
         }
-
-        let currentActiveChat = isActiveChat;
-        let currentIndexOfActiveChat = indexOfActiveChat;
 
         setFetchedFriends((prevState) => {
           const _fetchedFriends = [...prevState];
@@ -253,8 +246,8 @@ function Chat({
         });
 
         // if message is received by another client then
-        // notify the server
-        //recipientId !== authUserId &&
+        // notify the server (only if another friend's chat
+        // is active
         if (_isActiveChat.current === senderId) return;
         socket.emit(socketIoActions.messageStatus, {
           userId: authUserId,
@@ -299,7 +292,6 @@ function Chat({
             );
             if (index > -1) currentMessages[_userId][index].messageStatus = 1;
           }
-          console.log("received");
           return currentMessages;
         });
       }
@@ -317,13 +309,8 @@ function Chat({
             const index = currentMessages[_userId].findIndex(
               (message) => message.id === messageId
             );
-            console.log(messageId);
-            console.log(index);
-            console.log(currentMessages[_userId][index]);
             if (index > -1) currentMessages[_userId][index].messageStatus = 2;
           }
-
-          console.log("seen");
           return currentMessages;
         });
       }
