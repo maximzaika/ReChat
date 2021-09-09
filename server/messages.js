@@ -1,26 +1,7 @@
 const dateFormat = require("dateformat");
 const { v4: uuid } = require("uuid");
 
-// messageStatus = 0 = sent
-// messageStatus = 1 = received
-// messageStatus = 2 = received + seen
-function Message(
-  id,
-  senderId,
-  recipientId,
-  timestamp,
-  encryptedMessage,
-  messageStatus
-) {
-  this.id = id;
-  this.senderId = senderId;
-  this.recipientId = recipientId;
-  this.timestamp = dateFormat(timestamp, "isoDateTime");
-  this.message = encryptedMessage;
-  this.messageStatus = messageStatus;
-}
-
-const messages = [
+let messages = [
   new Message(
     1,
     "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
@@ -88,6 +69,31 @@ const messages = [
 ];
 
 /**
+ * Used for creating/accessing a Message
+ * @param {string} id Unique message id
+ * @param {string} senderId Unique id of the sender.
+ * @param {string} recipientId Unique id of the recipient user (similar to senderId).
+ * @param {Date} timestamp Date & Time when the message was sent.
+ * @param {string} encryptedMessage User's message in the encrypted format
+ * @param {number} messageStatus 0 = sent, 1 = received, 2 = receive + seen
+ */
+function Message(
+  id,
+  senderId,
+  recipientId,
+  timestamp,
+  encryptedMessage,
+  messageStatus
+) {
+  this.id = id;
+  this.senderId = senderId;
+  this.recipientId = recipientId;
+  this.timestamp = dateFormat(timestamp, "isoDateTime");
+  this.message = encryptedMessage;
+  this.messageStatus = messageStatus;
+}
+
+/**
  * Searches for any pending messages.
  * @param {string} userId Unique id of the connected user.
  * @param {number} messageStatus Status of the message: 0 = sent, 1 = received, 2 = seen
@@ -145,7 +151,20 @@ const findPendingMessagesHandler = (userId, messageStatus) => {
   return messageIds;
 };
 
+/**
+ * Retrieves user's friend's message on HTTP request (on connecting).
+ * @param {string} userId Unique id of the connected user.
+ * @return {Object.<string, Message[]>} Users connected.
+ */
 const getUserMessagesHandler = (userId) => {
+  /**
+   * Contains messages of user's friends:
+   *  {
+   *    friendId : [Message{}, Message{}, Message{}...],
+   *    friendId : [Message{}, Message{}, Message{}...], ...
+   *  }
+   * @type {Object.<string, Message[]>}
+   * */
   const _messages = {};
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i].senderId === userId || messages[i].recipientId === userId) {
@@ -166,12 +185,6 @@ const getUserMessagesHandler = (userId) => {
   }
 
   return _messages;
-};
-
-const getNextMessageIdHandler = () => {
-  const currentId = messages[messages.length - 1].id;
-  if (currentId) return currentId + 1;
-  if (!currentId) return 0;
 };
 
 /**
@@ -201,7 +214,35 @@ const storeMessageHandler = (
   return message;
 };
 
-// status: 0 = sent, 1 = received, 2 = seen + received
+/**
+ * Update's message status based on the previous status. 0 to 1, 1 to 2
+ * @param {string} messageId Message's unique id.
+ * @param {string} userId Sender's unique id.
+ * @param {string} recipientId Recipient's unique id.
+ * @param {0 | 1 | 2} status 0 = sent, 1 = received, 2 = seen + received
+ * @return {boolean} Indicates successfully update.
+ */
+const updateMessageStatusHandler = (messageId, userId, recipientId, status) => {
+  const _messages = [...messages];
+  const messageIndex = _messages.findIndex(
+    (message) =>
+      message.id === messageId &&
+      message.senderId === userId &&
+      message.recipientId === recipientId &&
+      message.messageStatus === status - 1
+  );
+  _messages[messageIndex] = status;
+  messages = _messages;
+  return true;
+};
+
+/**
+ * Update's all messages status based on the previous status. 0 to 1, 1 to 2
+ * @param {string} userId Sender's unique id.
+ * @param {string} recipientId Recipient's unique id.
+ * @param {0 | 1 | 2} status 0 = sent, 1 = received, 2 = seen + received
+ * @return {string[]} Indicates successfully update.
+ */
 const updateMessagesStatusHandler = (userId, recipientId, status) => {
   const messageIds = [];
   for (let message of messages) {
@@ -217,21 +258,8 @@ const updateMessagesStatusHandler = (userId, recipientId, status) => {
   return messageIds;
 };
 
-// status: 0 = sent, 1 = received, 2 = seen + received
-const updateMessageStatusHandler = (messageId, userId, recipientId, status) => {
-  const messageIndex = messages.findIndex(
-    (message) =>
-      message.id === messageId &&
-      message.senderId === userId &&
-      message.recipientId === recipientId &&
-      message.messageStatus === status - 1
-  );
-  messages[messageIndex] = status;
-};
-
 module.exports = {
   getUserMessagesHandler,
-  getNextMessageIdHandler,
   findPendingMessagesHandler,
   storeMessageHandler,
   updateMessagesStatusHandler,

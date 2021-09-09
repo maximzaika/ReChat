@@ -16,7 +16,6 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
-import dateFormat from "dateformat";
 
 const socket = io.connect("/");
 
@@ -71,13 +70,10 @@ function Chat({
       tempUsers[indexOfActiveChat].userTyping = false;
     }
 
-    console.log(tempUsers[indexOfActiveChat].userTyping);
-
     // notify another user that current user is not typing
     if (value.length === 0 && tempUsers[indexOfActiveChat].userTyping) {
-      console.log("typing = 0");
       tempUsers[indexOfActiveChat].userTyping = false;
-      socket.emit(socketIoActions.typingStatus, {
+      socket.emit(socketIoActions.typingState, {
         isTyping: false,
         roomId: tempUsers[indexOfActiveChat].uniqueId,
       });
@@ -86,9 +82,9 @@ function Chat({
     // notify another user that current user is typing
     if (value.length > 0 && !tempUsers[indexOfActiveChat].userTyping) {
       tempUsers[indexOfActiveChat].userTyping = true;
-      console.log("typing > 0");
-      socket.emit(socketIoActions.typingStatus, {
+      socket.emit(socketIoActions.typingState, {
         isTyping: true,
+        senderId: authUserId,
         roomId: tempUsers[indexOfActiveChat].uniqueId,
       });
     }
@@ -176,7 +172,7 @@ function Chat({
     );
 
     socket.on(
-      socketIoActions.typingStatus,
+      socketIoActions.typingState,
       ({ recipientId, userId, typingState }) => {
         if (recipientId !== authUserId) return;
 

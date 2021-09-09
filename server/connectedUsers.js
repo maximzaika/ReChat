@@ -1,3 +1,5 @@
+let connectedUsers = [];
+
 /**
  * Used for creating/accessing Connected Users
  * @param {string} socketId Unique socket id to identify the user
@@ -13,9 +15,6 @@ function ConnectedUser(socketId, userId, recipientId, roomId) {
   this.recipientId = recipientId;
   this.roomId = roomId;
 }
-
-// Contains all the connected users
-const connectedUsers = [];
 
 /**
  * Add a new user to the array of connected users.
@@ -34,7 +33,7 @@ const newConnectedUserHandler = (socketId, userId, recipientId, roomId) => {
 };
 
 /**
- * Checks for connected users in the same room.
+ * Checks for connected user in the same room.
  * @param {string} socketId Unique socket id to identify the user
  * @param {string} roomId Unique room id received from the client. Usually it is
  *                        a combination of user ids: id_id (but on the client
@@ -44,6 +43,23 @@ const newConnectedUserHandler = (socketId, userId, recipientId, roomId) => {
 const findConnectedUserHandler = (socketId, roomId) =>
   connectedUsers.find(
     (user) => user.socketId !== socketId && user.roomId === roomId
+  );
+
+/**
+ * Checks for connected users in the same room.
+ * @param {string} socketId Unique socket id to identify the user
+ * @param {string} roomId Unique room id received from the client. Usually it is
+ *                        a combination of user ids: id_id (but on the client
+ *                        side it is encrypted)
+ * @param {string} senderId Unique id to identify the sender.
+ * @return {ConnectedUser} Users connected.
+ */
+const findUniqueConnectedUserHandler = (socketId, senderId, roomId) =>
+  connectedUsers.find(
+    (user) =>
+      user.socketId !== socketId &&
+      user.userId !== senderId &&
+      user.roomId === roomId
   );
 
 /**
@@ -59,17 +75,43 @@ const checkMessageReceivedHandler = (receivedFromUserId, receivedByUserId) =>
       user.recipientId === receivedFromUserId
   );
 
-// called when the user leaves the chat and its object gets deleted from the array
-const disconnectUserHandler = (disconnectedUser) => {
-  const index = connectedUsers.findIndex(
-    (user) => user.socketId === disconnectedUser
+/**
+ * Checks whether there are any other users connected to the room.
+ * Excluding the receiver. If someone else is connected, then
+ * receiver shouldn't be notified of the disconnection since another
+ * socket is connected. Either way user is removed from the connected users.
+ * @param {string} socketId Unique socket id to identify the user
+ * @return {ConnectedUser | false} Disconnected user OR nobody disconnected.
+ */
+const disconnectUserHandler = (socketId) => {
+  const index = connectedUsers.findIndex((user) => user.socketId === socketId);
+
+  // if no user found, then just return false
+  if (index === -1) return false;
+  const { userId, roomId, recipientId } = connectedUsers[index];
+  const similarSockets = connectedUsers.filter(
+    (user) =>
+      user.userId === userId &&
+      user.recipientId === recipientId &&
+      user.roomId === roomId
   );
-  if (index !== -1) return connectedUsers.splice(index, 1)[0];
+
+  if (similarSockets.length === 1) {
+    // remove disconnected user and let the server know who has disconnected
+    return connectedUsers.splice(index, 1)[0];
+  } else {
+    // remove disconnected user
+    connectedUsers.splice(index, 1);
+    /* if there is another similar user is connected (maybe from another window)
+    then notification of disconnection is not required */
+    return false;
+  }
 };
 
 module.exports = {
   newConnectedUserHandler,
   findConnectedUserHandler,
+  findUniqueConnectedUserHandler,
   checkMessageReceivedHandler,
   disconnectUserHandler,
 };

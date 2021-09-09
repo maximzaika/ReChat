@@ -10,6 +10,7 @@ const cors = require("cors");
 const {
   newConnectedUserHandler,
   findConnectedUserHandler,
+  findUniqueConnectedUserHandler,
   checkMessageReceivedHandler,
   disconnectUserHandler,
 } = require("./connectedUsers");
@@ -18,7 +19,6 @@ const { findFriendsHandler, updateUsersLastMessage } = require("./users");
 const {
   getUserMessagesHandler,
   findPendingMessagesHandler,
-  getNextMessageIdHandler,
   storeMessageHandler,
   updateMessagesStatusHandler,
   updateMessageStatusHandler,
@@ -92,7 +92,7 @@ app.post("/messages", (req, res) => {
  * @param {Date} timestamp Current time when user's status is updated.
  * @param {boolean} onlineStatus User's online status.
  */
-function UserOnlineStatus(
+function UserOnlineState(
   socketId,
   userId,
   recipientId,
@@ -112,7 +112,7 @@ function UserOnlineStatus(
  * @param {string} userId Unique id of the connected user.
  * @param {string} recipientId Unique id of the recipient user (similar to userId).
  */
-function MessagesSeen(messagesId, userId, recipientId) {
+function MessageState(messagesId, userId, recipientId) {
   this.messagesId = messagesId;
   this.userId = userId;
   this.recipientId = recipientId;
@@ -140,9 +140,9 @@ io.on(actions.connection, (socket) => {
     // if there are users online then let the new connected user know their status
     if (connectedUser) {
       log(`[connection (onlineStatus)] ${userId} notifies ${recipientId}`);
-      io.in(connectedUser.roomId).emit(
+      socket.emit(
         actions.onlineStatus,
-        new UserOnlineStatus(
+        new UserOnlineState(
           connectedUser.socketId,
           connectedUser.userId,
           connectedUser.recipientId,
@@ -157,7 +157,7 @@ io.on(actions.connection, (socket) => {
       .to(user.roomId)
       .emit(
         actions.onlineStatus,
-        new UserOnlineStatus(
+        new UserOnlineState(
           user.socketId,
           user.userId,
           user.recipientId,
@@ -185,7 +185,7 @@ io.on(actions.connection, (socket) => {
             .to(senderId.roomId)
             .emit(
               actions.messageSeen,
-              new MessagesSeen(
+              new MessageState(
                 messagesId,
                 senderId.userId,
                 senderId.recipientId
@@ -238,79 +238,78 @@ io.on(actions.connection, (socket) => {
       // 1 = received
       const messagesId = updateMessagesStatusHandler(recipientId, userId, 1);
       log(`[messageStatus (messageReceived)] ${recipientId} from ${userId}`);
-      socket.broadcast.to(senderId.roomId).emit(actions.messageReceived, {
-        messagesId: messagesId,
-        userId: senderId.userId,
-        recipientId: senderId.recipientId,
-      });
-    }
-  });
-
-  socket.on(actions.messageSeen, ({ messageId, userId, recipientId }) => {
-    updateMessageStatusHandler(recipientId, userId, 1);
-    updateMessageStatusHandler(recipientId, userId, 2);
-    const user = checkMessageReceivedHandler(recipientId, userId);
-
-    if (user) {
-      log(`[messageSeen] ${recipientId} from ${userId}`);
       socket.broadcast
-        .to(user.roomId)
+        .to(senderId.roomId)
         .emit(
-          actions.messageSeen,
-          new MessagesSeen([messageId], userId, recipientId)
+          actions.messageReceived,
+          new MessageState(messagesId, senderId.userId, senderId.recipientId)
         );
     }
   });
 
+  socket.on(actions.messageSeen, ({ messageId, userId, recipientId }) => {
+    if (updateMessageStatusHandler(messageId, userId, recipientId, 1))
+      updateMessageStatusHandler(messageId, userId, recipientId, 2);
+
+    const user = checkMessageReceivedHandler(recipientId, userId);
+    if (!user) return;
+    log(`[messageSeen] ${recipientId} from ${userId}`);
+    socket.broadcast
+      .to(user.roomId)
+      .emit(
+        actions.messageSeen,
+        new MessageState([messageId], userId, recipientId)
+      );
+  });
+
   // boolean
-  socket.on(actions.typingStatus, ({ isTyping, roomId }) => {
-    const user = findConnectedUserHandler(socket.id, roomId);
+  socket.on(actions.typingState, ({ isTyping, senderId, roomId }) => {
+    const user = findUniqueConnectedUserHandler(socket.id, senderId, roomId);
+    if (!user) return;
 
-    console.log("user > ", user);
-
-    if (user) {
-      log(`[typingStatus] ${user.recipientId} typing to ${user.userId}`);
-      socket.broadcast.to(user.roomId).emit(actions.typingStatus, {
-        userId: user.recipientId,
-        recipientId: user.userId,
-        typingState: isTyping,
-      });
-    }
+    log(`[typingStatus] ${user.recipientId} typing to ${user.userId}`);
+    socket.broadcast.to(user.roomId).emit(actions.typingState, {
+      userId: user.recipientId,
+      recipientId: user.userId,
+      typingState: isTyping,
+    });
   });
 
   socket.on(actions.disconnectRoom, () => {
     const user = disconnectUserHandler(socket.id);
-    const date = new Date();
+    if (!user) return;
 
-    if (user) {
-      log(
-        `[onlineStatus] (disconnectRoom) ${user.userId} closed chat ${user.recipientId}`
-      );
-      io.to(user.roomId).emit(actions.onlineStatus, {
-        userId: user.userId,
-        socketId: user.socketId,
-        recipientId: user.recipientId,
-        lastOnline: dateFormat(date, "isoDateTime"),
-        online: false,
-      });
-    }
+    log(
+      `[onlineStatus] (disconnectRoom) ${user.userId} closed chat ${user.recipientId}`
+    );
+    io.to(user.roomId).emit(
+      actions.onlineStatus,
+      new UserOnlineState(
+        user.socketId,
+        user.userId,
+        user.recipientId,
+        new Date(),
+        false
+      )
+    );
   });
 
   socket.on(actions.disconnect, () => {
     const user = disconnectUserHandler(socket.id);
-    const date = new Date();
+    if (!user) return;
 
-    if (user) {
-      log(
-        `[onlineStatus (disconnect)] ${user.userId} disconnected from ${user.recipientId}`
-      );
-      io.to(user.roomId).emit(actions.onlineStatus, {
-        userId: user.userId,
-        socketId: user.socketId,
-        recipientId: user.recipientId,
-        lastOnline: dateFormat(date, "isoDateTime"),
-        online: false,
-      });
-    }
+    log(
+      `[onlineStatus (disconnect)] ${user.userId} disconnected from ${user.recipientId}`
+    );
+    io.to(user.roomId).emit(
+      actions.onlineStatus,
+      new UserOnlineState(
+        user.socketId,
+        user.userId,
+        user.recipientId,
+        new Date(),
+        false
+      )
+    );
   });
 });
