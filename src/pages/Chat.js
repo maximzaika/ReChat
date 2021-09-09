@@ -25,7 +25,16 @@ function Chat({
   authUserFName,
   authUserSName,
   socketProcess,
+  fetchFriends,
+  fetchMessages,
+  friends,
+  messages,
 }) {
+  useEffect(() => {
+    fetchFriends(isAuth, { userId: authUserId });
+    fetchMessages(isAuth, { userId: authUserId });
+  }, [fetchFriends, fetchMessages]);
+
   const dateFormat = require("dateformat");
   const [fetchedFriends, setFetchedFriends] = useFetch(
     "/friendList",
@@ -51,6 +60,7 @@ function Chat({
     _isActiveChat.current = isActiveChat;
   }, [isActiveChat]);
 
+  /** added */
   useEffect(() => {
     if (!isActiveChat) {
       const tempFriends = [...fetchedFriends];
@@ -249,7 +259,7 @@ function Chat({
         // notify the server (only if another friend's chat
         // is active
         if (_isActiveChat.current === senderId) return;
-        socket.emit(socketIoActions.messageStatus, {
+        socket.emit(socketIoActions.messageState, {
           userId: authUserId,
           recipientId: senderId,
         });
@@ -530,6 +540,8 @@ function Chat({
 
 const mapStateToProps = (state) => {
   return {
+    friends: state.socket.friends,
+    messages: state.socket.messages,
     isAuth: state.auth.token !== null,
     authUserId: state.auth.userId !== null ? state.auth.userId : null,
     authUserFName: state.auth.firstName !== null ? state.auth.firstName : null,
@@ -539,8 +551,12 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    socketProcess: (encrypt, msg, cipher) =>
-      dispatch(actions.socketProcess(encrypt, msg, cipher)),
+    fetchFriends: (isAuth, friends) =>
+      dispatch(actions.fetchFriends(isAuth, friends)),
+    fetchMessages: (isAuth, friends) =>
+      dispatch(actions.fetchMessages(isAuth, friends)),
+    // socketProcess: (encrypt, msg, cipher) =>
+    //   dispatch(actions.socketProcess(encrypt, msg, cipher)),
   };
 };
 

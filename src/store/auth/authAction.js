@@ -28,7 +28,6 @@ const authSuccess = (token, userId, expiresIn, firstName, surName) => {
 };
 
 const authFail = (errorType) => {
-  console.log(errorType);
   let errorMessage = "";
   switch (errorType) {
     case "EMAIL_EXISTS":

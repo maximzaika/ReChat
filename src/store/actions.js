@@ -6,4 +6,4 @@ export {
   setAuthRedirectPath,
 } from "./auth/authAction";
 
-export { socketProcess } from "./socket/socketAction";
+export { fetchFriends, fetchMessages } from "./socket/socketAction";

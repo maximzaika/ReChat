@@ -231,13 +231,13 @@ io.on(actions.connection, (socket) => {
 
   /* If user's another friend window is open, and another friend has sent the message
   then need to notify the sender that the message is received */
-  socket.on(actions.messageStatus, ({ userId, recipientId }) => {
+  socket.on(actions.messageState, ({ userId, recipientId }) => {
     const senderId = checkMessageReceivedHandler(userId, recipientId);
 
     if (senderId) {
       // 1 = received
       const messagesId = updateMessagesStatusHandler(recipientId, userId, 1);
-      log(`[messageStatus (messageReceived)] ${recipientId} from ${userId}`);
+      log(`[messageState (messageReceived)] ${recipientId} from ${userId}`);
       socket.broadcast
         .to(senderId.roomId)
         .emit(
