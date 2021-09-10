@@ -1,26 +1,24 @@
 import * as actions from "../actionTypes";
 import * as socketActions from "../../shared/socketIoActionTypes";
 
-const fetchFriendsStart = () => ({
-  type: actions.SOCKET_FETCH_FRIENDS_START,
-});
-
 const fetchFriendsSuccess = (friendsData) => {
   const tempFriends = [...friendsData];
-  for (let friend of tempFriends) {
-    friend["userColor"] = Math.floor(Math.random() * 5);
+
+  for (let friend in tempFriends) {
+    tempFriends[friend]["inputMessage"] = "";
+    tempFriends[friend]["userColor"] = Math.floor(Math.random() * 5);
   }
 
   return { type: actions.SOCKET_FETCH_FRIENDS_SUCCESS, friends: tempFriends };
 };
 
-const fetchFriendsError = (err) => ({
-  type: actions.SOCKET_FETCH_FRIENDS_ERROR,
+const fetchError = (err) => ({
+  type: actions.SOCKET_FETCH_ERROR,
   error: err,
 });
 
-const fetchMessagesStart = () => ({
-  type: actions.SOCKET_FETCH_MESSAGES_START,
+const fetchStart = () => ({
+  type: actions.SOCKET_FETCH_START,
 });
 
 const fetchMessagesSuccess = (messagesData) => ({
@@ -28,47 +26,33 @@ const fetchMessagesSuccess = (messagesData) => ({
   messages: messagesData,
 });
 
-const fetchMessagesError = (err) => ({
-  type: actions.SOCKET_FETCH_MESSAGES_ERROR,
-  error: err,
+const socketConnected = () => ({
+  type: actions.SOCKET_CONNECTED,
 });
 
-export const fetchFriends = (isAuth, data) => (dispatch) => {
-  if (!isAuth) return dispatch(fetchFriendsError("ERROR: Please login."));
+const socketDisconnected = () => ({
+  type: actions.SOCKET_DISCONNECTED,
+});
 
-  dispatch(fetchFriendsStart());
+const socketSendMessage = () => ({
+  type: actions.SOCKET_SEND_MESSAGE,
+});
 
-  fetch("/friendList", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(data),
-  })
-    .then((res) => res.json())
-    .then((friends) => {
-      for (let friend in friends) {
-        friends[friend]["inputMessage"] = "";
-        friends[friend]["userColor"] = "";
-      }
-      dispatch(fetchFriendsSuccess(friends));
-    });
-};
+const socketTypingMessage = () => ({
+  type: actions.SOCKET_TYPING_MESSAGE,
+});
 
-export const fetchMessages = (isAuth, data) => (dispatch) => {
-  if (!isAuth) return dispatch(fetchMessagesError("ERROR: Please login."));
+const socketReceivedMessage = () => ({
+  type: actions.SOCKET_RECEIVED_MESSAGE,
+});
 
-  dispatch(fetchMessagesStart());
+const socketSeenMessage = () => ({
+  type: actions.SOCKET_SEEN_MESSAGE,
+});
 
-  fetch("/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(data),
-  })
-    .then((res) => res.json())
-    .then((messages) => dispatch(fetchMessagesSuccess(messages)));
-};
-
-export const connectUser =
+export const emitConnectUser =
   (socket, userId, recipientId, roomId) => (dispatch) => {
+    dispatch(socketConnected());
     socket.emit(socketActions.joinRoom, {
       userId: userId,
       recipientId: recipientId,
@@ -76,11 +60,12 @@ export const connectUser =
     });
   };
 
-export const disconnectUser = (socket) => (dispatch) => {
+export const emitDisconnectUser = (socket) => (dispatch) => {
+  dispatch(socketDisconnected());
   socket.emit(socketActions.disconnectRoom);
 };
 
-export const sendMessage =
+export const emitMessage =
   (
     socket,
     temporaryMessageId,
@@ -91,6 +76,7 @@ export const sendMessage =
     encryptedMessage
   ) =>
   (dispatch) => {
+    dispatch(socketSendMessage());
     socket.emit(socketActions.sendMessage, {
       temporaryId: temporaryMessageId,
       senderId: senderId,
@@ -101,28 +87,55 @@ export const sendMessage =
     });
   };
 
-export const setUserTypingState =
-  (socket, isTyping, roomId, senderId = null) =>
-  (dispatch) => {
+export const emitUserTypingState =
+  (socket, isTyping, roomId, senderId) => (dispatch) => {
+    dispatch(socketTypingMessage());
     socket.emit(socketActions.typingState, {
       isTyping: isTyping,
-      senderId: senderId,
       roomId: roomId,
+      senderId: senderId,
     });
   };
 
-export const setMessageReceivedState = (socket, userId, recipientId) => {
-  socket.emit(socketActions.messageState, {
-    userId: userId,
-    recipientId: recipientId,
-  });
-};
+export const emitMessageReceivedState =
+  (socket, userId, recipientId) => (dispatch) => {
+    dispatch(socketReceivedMessage());
+    socket.emit(socketActions.messageState, {
+      userId: userId,
+      recipientId: recipientId,
+    });
+  };
 
-export const setMessageSeenState =
+export const emitMessageSeenState =
   (socket, messageId, senderId, recipientId) => (dispatch) => {
+    dispatch(socketSeenMessage());
     socket.emit(socketActions.messageSeen, {
       messageId: messageId,
       userId: senderId,
       recipientId: recipientId,
     });
   };
+
+export const fetchData = (isAuth, data) => (dispatch) => {
+  if (!isAuth) return dispatch(fetchError("ERROR: Please login."));
+
+  dispatch(fetchStart());
+
+  const config = {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(data),
+  };
+
+  // fetch friends and then their messages
+  fetch("/friendList", config)
+    .then((res) => res.json())
+    .then((friends) => {
+      if (!friends) return;
+      dispatch(fetchFriendsSuccess(friends));
+      return fetch("/messages", config);
+    })
+    .then((res) => res.json())
+    .then((messages) => dispatch(fetchMessagesSuccess(messages)))
+    .catch((err) => dispatch(fetchError(err)));
+};

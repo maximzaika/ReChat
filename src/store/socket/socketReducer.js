@@ -4,64 +4,57 @@ import { updateObject } from "../../shared/updateData";
 const initialState = {
   friends: [],
   messages: [],
-  isFetchingFriends: false,
-  isFetchingMessages: false,
-  isErrorFetchingFriends: null,
-  isErrorFetchingMessages: null,
+  isFetching: false,
+  isError: null,
 };
 
-const fetchFriendsStart = (state) =>
+const fetchStart = (state) =>
   updateObject(state, {
-    isFetchingFriends: true,
-    isErrorFetchingFriends: null,
-  });
-
-const fetchMessagesStart = (state) =>
-  updateObject(state, {
-    isFetchingMessages: true,
-    isErrorFetchingMessages: null,
+    isFetching: true,
+    isError: null,
   });
 
 const fetchFriendsSuccess = (state, action) =>
   updateObject(state, {
-    isFetchingFriends: false,
-    isErrorFetchingFriends: null,
+    isError: null,
     friends: action.friends,
   });
 
 const fetchMessagesSuccess = (state, action) =>
   updateObject(state, {
-    isFetchingMessages: false,
-    isErrorFetchingMessages: null,
+    isFetching: false,
+    isError: null,
     messages: action.messages,
   });
 
-const fetchFriendsError = (state, action) =>
+const fetchError = (state, action) =>
   updateObject(state, {
-    isFetchingFriends: false,
-    isErrorFetchingFriends: action.error,
-  });
-
-const fetchMessagesError = (state, action) =>
-  updateObject(state, {
-    isFetchingMessages: false,
-    isErrorFetchingMessages: action.error,
+    isFetching: false,
+    isErrorFetching: action.error,
   });
 
 const socketReducer = (state = initialState, action) => {
   switch (action.type) {
-    case actions.SOCKET_FETCH_FRIENDS_START:
-      return fetchFriendsStart(state);
-    case actions.SOCKET_FETCH_MESSAGES_START:
-      return fetchMessagesStart(state);
+    case actions.SOCKET_FETCH_START:
+      return fetchStart(state);
     case actions.SOCKET_FETCH_FRIENDS_SUCCESS:
       return fetchFriendsSuccess(state, action);
     case actions.SOCKET_FETCH_MESSAGES_SUCCESS:
       return fetchMessagesSuccess(state, action);
-    case actions.SOCKET_FETCH_FRIENDS_ERROR:
-      return fetchFriendsError(state, action);
-    case actions.SOCKET_FETCH_MESSAGES_ERROR:
-      return fetchMessagesError(state, action);
+    case actions.SOCKET_FETCH_ERROR:
+      return fetchError(state, action);
+    case actions.SOCKET_CONNECTED:
+      return state;
+    case actions.SOCKET_DISCONNECTED:
+      return state;
+    case actions.SOCKET_SEND_MESSAGE:
+      return state;
+    case actions.SOCKET_TYPING_MESSAGE:
+      return state;
+    case actions.SOCKET_RECEIVED_MESSAGE:
+      return state;
+    case actions.SOCKET_SEEN_MESSAGE:
+      return state;
     default:
       return state;
   }
