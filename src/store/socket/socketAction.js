@@ -50,6 +50,38 @@ const socketSeenMessage = () => ({
   type: actions.SOCKET_SEEN_MESSAGE,
 });
 
+const socketChangeOnlineState = (userId, onlineState, lastOnline) => ({
+  type: actions.SOCKET_ON_ONLINE_STATE,
+  userId: userId,
+  onlineState: onlineState,
+  lastOnline: lastOnline,
+});
+
+const socketChangeTypingState = (userId, typingState) => ({
+  type: actions.SOCKET_ON_TYPING_STATE,
+  userId: userId,
+  typingState: typingState,
+});
+
+const socketMessageReceived = (
+  isActiveChat,
+  authUserId,
+  messageId,
+  senderId,
+  recipientId,
+  timestamp,
+  message
+) => ({
+  type: actions.SOCKET_ON_MESSAGE_RECEIVED,
+  isActiveChat: isActiveChat,
+  authUserId: authUserId,
+  messageId: messageId,
+  senderId: senderId,
+  recipientId: recipientId,
+  timestamp: timestamp,
+  message,
+});
+
 export const emitConnectUser =
   (socket, userId, recipientId, roomId) => (dispatch) => {
     dispatch(socketConnected());
@@ -107,13 +139,50 @@ export const emitMessageReceivedState =
   };
 
 export const emitMessageSeenState =
-  (socket, messageId, senderId, recipientId) => (dispatch) => {
+  (socket, isActiveChat, messageId, senderId, recipientId) => (dispatch) => {
+    if (senderId !== isActiveChat) return;
     dispatch(socketSeenMessage());
     socket.emit(socketActions.messageSeen, {
       messageId: messageId,
       userId: senderId,
       recipientId: recipientId,
     });
+  };
+
+export const onOnlineStateChange =
+  (recipientId, authUserId, userId, online, lastOnline) => (dispatch) => {
+    if (recipientId !== authUserId) return;
+    dispatch(socketChangeOnlineState(userId, online, lastOnline));
+  };
+
+export const onTypingStateChange =
+  (recipientId, authUserId, userId, typingState) => (dispatch) => {
+    if (recipientId !== authUserId) return;
+    dispatch(socketChangeTypingState(userId, typingState));
+  };
+
+export const onMessageReceive =
+  (
+    isActiveChat,
+    authUserId,
+    messageId,
+    senderId,
+    recipientId,
+    timestamp,
+    message
+  ) =>
+  (dispatch) => {
+    dispatch(
+      socketMessageReceived(
+        isActiveChat,
+        authUserId,
+        messageId,
+        senderId,
+        recipientId,
+        timestamp,
+        message
+      )
+    );
   };
 
 export const fetchData = (isAuth, data) => (dispatch) => {

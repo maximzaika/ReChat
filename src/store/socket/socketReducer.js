@@ -1,5 +1,6 @@
 import * as actions from "../actionTypes";
 import { updateObject } from "../../shared/updateData";
+const dateFormat = require("dateformat");
 
 const initialState = {
   friends: [],
@@ -33,6 +34,55 @@ const fetchError = (state, action) =>
     isErrorFetching: action.error,
   });
 
+const socketOnOnlineState = (state, { userId, onlineState, lastOnline }) => {
+  const friends = [...state.friends];
+  friends.map((friend) => {
+    if (friend.id !== userId) return friend;
+    friend.onlineState = onlineState;
+    friends.lastOnline = dateFormat(lastOnline, "isoDateTime");
+    return friend;
+  });
+  return updateObject(state, { friends: friends });
+};
+
+const socketOnTypingState = (state, { userId, typingState }) => {
+  const friends = [...state.friends];
+  friends.map((friend) => {
+    if (friend.id !== userId) return friend;
+    friend.typingState = typingState;
+    return friend;
+  });
+  return updateObject(state, { friends: friends });
+};
+
+const socketOnMessageReceived = (
+  state,
+  {
+    isActiveChat,
+    authUserId,
+    messageId,
+    senderId,
+    recipientId,
+    timestamp,
+    message,
+  }
+) => {
+  const friends = [...state.friends];
+  friends.map((friend) => {
+    let found = false;
+    if (senderId === authUserId && senderId === friend.userId) found = true;
+    if (senderId !== authUserId && senderId === friend.id) found = true;
+    if (!found) return friend;
+
+    friend.lastMessage = message;
+    friend.time = timestamp;
+    return friend;
+  });
+
+  // sort users with new messages to the top of the friend list
+  friends.sort((a, b) => new Date(b.time) - new Date(a.time));
+};
+
 const socketReducer = (state = initialState, action) => {
   switch (action.type) {
     case actions.SOCKET_FETCH_START:
@@ -55,6 +105,12 @@ const socketReducer = (state = initialState, action) => {
       return state;
     case actions.SOCKET_SEEN_MESSAGE:
       return state;
+    case actions.SOCKET_ON_ONLINE_STATE:
+      return socketOnOnlineState(state, action);
+    case actions.SOCKET_ON_TYPING_STATE:
+      return socketOnTypingState(state, action);
+    case actions.SOCKET_ON_MESSAGE_RECEIVED:
+      return socketOnMessageReceived(state, action);
     default:
       return state;
   }

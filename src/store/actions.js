@@ -14,4 +14,6 @@ export {
   emitUserTypingState,
   emitMessageReceivedState,
   emitMessageSeenState,
+  onOnlineStateChange,
+  onTypingStateChange,
 } from "./socket/socketAction";

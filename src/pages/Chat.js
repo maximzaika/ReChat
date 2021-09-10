@@ -16,6 +16,8 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
+import { on } from "socket.io-client/build/on";
+import { onTypingStateChange } from "../store/actions";
 
 const socket = io.connect("/");
 
@@ -33,6 +35,8 @@ function Chat({
   emitUserTyping,
   emitMsgReceived,
   emitMsgSeen,
+  onOnlineStateChange,
+  onTypingStateChange,
 }) {
   useEffect(() => {
     fetchData(isAuth, { userId: authUserId });
@@ -176,6 +180,14 @@ function Chat({
     socket.on(
       socketIoActions.onlineStatus,
       ({ recipientId, socketId, userId, online, lastOnline }) => {
+        onOnlineStateChange(
+          recipientId,
+          authUserId,
+          userId,
+          online,
+          lastOnline
+        );
+
         if (recipientId !== authUserId) return;
 
         setFetchedFriends((prevState) => {
@@ -191,6 +203,8 @@ function Chat({
     socket.on(
       socketIoActions.typingState,
       ({ recipientId, userId, typingState }) => {
+        onTypingStateChange(recipientId, authUserId, userId, typingState);
+
         if (recipientId !== authUserId) return;
 
         setFetchedFriends((prevState) => {
@@ -205,9 +219,7 @@ function Chat({
     socket.on(
       socketIoActions.message,
       ({ id, senderId, recipientId, timestamp, message, messageStatus }) => {
-        if (senderId === _isActiveChat.current) {
-          emitMsgSeen(socket, id, senderId, recipientId);
-        }
+        emitMsgSeen(socket, _isActiveChat.current, id, senderId, recipientId);
 
         setFetchedFriends((prevState) => {
           const _fetchedFriends = [...prevState];
@@ -568,9 +580,40 @@ const mapDispatchToProps = (dispatch) => {
       dispatch(actions.emitUserTypingState(socket, isTyping, roomId, senderId)),
     emitMsgReceived: (socket, userId, recipientId) =>
       dispatch(actions.emitMessageReceivedState(socket, userId, recipientId)),
-    emitMsgSeen: (socket, messageId, senderId, recipientId) =>
+    emitMsgSeen: (socket, isActiveChat, messageId, senderId, recipientId) =>
       dispatch(
-        actions.emitMessageSeenState(socket, messageId, senderId, recipientId)
+        actions.emitMessageSeenState(
+          socket,
+          isActiveChat,
+          messageId,
+          senderId,
+          recipientId
+        )
+      ),
+    onOnlineStateChange: (
+      recipientId,
+      authUserId,
+      userId,
+      online,
+      lastOnline
+    ) =>
+      dispatch(
+        actions.onOnlineStateChange(
+          recipientId,
+          authUserId,
+          userId,
+          online,
+          lastOnline
+        )
+      ),
+    onTypingStateChange: (recipientId, authUserId, userId, typingState) =>
+      dispatch(
+        actions.onTypingStateChange(
+          recipientId,
+          authUserId,
+          userId,
+          typingState
+        )
       ),
   };
 };
