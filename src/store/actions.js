@@ -8,6 +8,7 @@ export {
 
 export {
   fetchData,
+  setActiveChat,
   emitConnectUser,
   emitDisconnectUser,
   emitMessage,
@@ -16,4 +17,5 @@ export {
   emitMessageSeenState,
   onOnlineStateChange,
   onTypingStateChange,
+  onNewMessage,
 } from "./socket/socketAction";

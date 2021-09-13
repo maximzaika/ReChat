@@ -16,8 +16,6 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
-import { on } from "socket.io-client/build/on";
-import { onTypingStateChange } from "../store/actions";
 
 const socket = io.connect("/");
 
@@ -27,8 +25,11 @@ function Chat({
   authUserFName,
   authUserSName,
   fetchData,
+  setActiveChat,
   friends,
   messages,
+  testingActiveChat,
+  testingActiveChhatIndex,
   emitConnectUser,
   emitDisconnectUser,
   emitMsgSend,
@@ -37,6 +38,7 @@ function Chat({
   emitMsgSeen,
   onOnlineStateChange,
   onTypingStateChange,
+  onNewMessage,
 }) {
   useEffect(() => {
     fetchData(isAuth, { userId: authUserId });
@@ -57,6 +59,7 @@ function Chat({
       userId: authUserId,
     }
   );
+
   const [isActiveChat, setIsActiveChat] = useState(null);
   const [indexOfActiveChat, setIndexOfActiveChat] = useState(null);
   const history = useHistory();
@@ -177,16 +180,11 @@ function Chat({
   };
 
   useEffect(() => {
+    /** added */
     socket.on(
       socketIoActions.onlineStatus,
       ({ recipientId, socketId, userId, online, lastOnline }) => {
-        onOnlineStateChange(
-          recipientId,
-          authUserId,
-          userId,
-          online,
-          lastOnline
-        );
+        onOnlineStateChange(recipientId, userId, online, lastOnline);
 
         if (recipientId !== authUserId) return;
 
@@ -200,10 +198,11 @@ function Chat({
       }
     );
 
+    /** added */
     socket.on(
       socketIoActions.typingState,
       ({ recipientId, userId, typingState }) => {
-        onTypingStateChange(recipientId, authUserId, userId, typingState);
+        onTypingStateChange(recipientId, userId, typingState);
 
         if (recipientId !== authUserId) return;
 
@@ -216,10 +215,12 @@ function Chat({
       }
     );
 
+    /** added */
     socket.on(
       socketIoActions.message,
       ({ id, senderId, recipientId, timestamp, message, messageStatus }) => {
-        emitMsgSeen(socket, _isActiveChat.current, id, senderId, recipientId);
+        emitMsgSeen(socket, id, senderId, recipientId);
+        onNewMessage(socket, id, senderId, recipientId, timestamp, message);
 
         setFetchedFriends((prevState) => {
           const _fetchedFriends = [...prevState];
@@ -270,11 +271,11 @@ function Chat({
           return currentMessages;
         });
 
-        // if message is received by another client then
-        // notify the server (only if another friend's chat
-        // is active
-        if (_isActiveChat.current === senderId) return;
-        emitMsgReceived(socket, authUserId, senderId);
+        // // if message is received by another client then
+        // // notify the server (only if another friend's chat
+        // // is active
+        // if (_isActiveChat.current === senderId) return;
+        // emitMsgReceived(socket, authUserId, senderId);
       }
     );
 
@@ -340,7 +341,7 @@ function Chat({
   }, [socket]);
 
   useEffect(() => {
-    console.log(fetchedFriends);
+    // console.log(fetchedFriends);
   }, [fetchedFriends]);
 
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
@@ -361,6 +362,7 @@ function Chat({
     }
 
     setFetchedUserMessages(_fetchedMessages);
+    setActiveChat(recipientId, index);
     setIsActiveChat(recipientId);
     setIndexOfActiveChat(index);
     history.push("/chat/" + recipientId);
@@ -541,6 +543,8 @@ const mapStateToProps = (state) => {
   return {
     friends: state.socket.friends,
     messages: state.socket.messages,
+    testingActiveChat: state.socket.isActiveChat.userId,
+    testingActiveChhatIndex: state.socket.isActiveChat.index,
     isAuth: state.auth.token !== null,
     authUserId: state.auth.userId !== null ? state.auth.userId : null,
     authUserFName: state.auth.firstName !== null ? state.auth.firstName : null,
@@ -552,6 +556,8 @@ const mapDispatchToProps = (dispatch) => {
   return {
     fetchData: (isAuth, friends) =>
       dispatch(actions.fetchData(isAuth, friends)),
+    setActiveChat: (friendId, index) =>
+      dispatch(actions.setActiveChat(friendId, index)),
     emitConnectUser: (socket, userId, recipientId, roomId) =>
       dispatch(actions.emitConnectUser(socket, userId, recipientId, roomId)),
     emitDisconnectUser: (socket) =>
@@ -580,39 +586,32 @@ const mapDispatchToProps = (dispatch) => {
       dispatch(actions.emitUserTypingState(socket, isTyping, roomId, senderId)),
     emitMsgReceived: (socket, userId, recipientId) =>
       dispatch(actions.emitMessageReceivedState(socket, userId, recipientId)),
-    emitMsgSeen: (socket, isActiveChat, messageId, senderId, recipientId) =>
+    emitMsgSeen: (socket, messageId, senderId, recipientId) =>
       dispatch(
-        actions.emitMessageSeenState(
-          socket,
-          isActiveChat,
-          messageId,
-          senderId,
-          recipientId
-        )
+        actions.emitMessageSeenState(socket, messageId, senderId, recipientId)
       ),
-    onOnlineStateChange: (
+    onOnlineStateChange: (recipientId, userId, online, lastOnline) =>
+      dispatch(
+        actions.onOnlineStateChange(recipientId, userId, online, lastOnline)
+      ),
+    onTypingStateChange: (recipientId, userId, typingState) =>
+      dispatch(actions.onTypingStateChange(recipientId, userId, typingState)),
+    onNewMessage: (
+      socket,
+      messageId,
+      senderId,
       recipientId,
-      authUserId,
-      userId,
-      online,
-      lastOnline
+      timestamp,
+      message
     ) =>
       dispatch(
-        actions.onOnlineStateChange(
+        actions.onNewMessage(
+          socket,
+          messageId,
+          senderId,
           recipientId,
-          authUserId,
-          userId,
-          online,
-          lastOnline
-        )
-      ),
-    onTypingStateChange: (recipientId, authUserId, userId, typingState) =>
-      dispatch(
-        actions.onTypingStateChange(
-          recipientId,
-          authUserId,
-          userId,
-          typingState
+          timestamp,
+          message
         )
       ),
   };

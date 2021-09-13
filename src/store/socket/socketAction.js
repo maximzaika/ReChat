@@ -1,5 +1,6 @@
 import * as actions from "../actionTypes";
 import * as socketActions from "../../shared/socketIoActionTypes";
+import { SOCKET_SET_ACTIVE_CHAT } from "../actionTypes";
 
 const fetchFriendsSuccess = (friendsData) => {
   const tempFriends = [...friendsData];
@@ -35,36 +36,35 @@ const socketDisconnected = () => ({
 });
 
 const socketSendMessage = () => ({
-  type: actions.SOCKET_SEND_MESSAGE,
+  type: actions.SOCKET_EMIT_MESSAGE,
 });
 
-const socketTypingMessage = () => ({
-  type: actions.SOCKET_TYPING_MESSAGE,
+const socketNotifyTypingMessage = () => ({
+  type: actions.SOCKET_EMIT_TYPING,
 });
 
 const socketReceivedMessage = () => ({
-  type: actions.SOCKET_RECEIVED_MESSAGE,
+  type: actions.SOCKET_EMIT_RECEIVED,
 });
 
 const socketSeenMessage = () => ({
-  type: actions.SOCKET_SEEN_MESSAGE,
+  type: actions.SOCKET_EMIT_SEEN,
 });
 
 const socketChangeOnlineState = (userId, onlineState, lastOnline) => ({
-  type: actions.SOCKET_ON_ONLINE_STATE,
+  type: actions.SOCKET_ON_ONLINE,
   userId: userId,
   onlineState: onlineState,
   lastOnline: lastOnline,
 });
 
 const socketChangeTypingState = (userId, typingState) => ({
-  type: actions.SOCKET_ON_TYPING_STATE,
+  type: actions.SOCKET_ON_TYPING,
   userId: userId,
   typingState: typingState,
 });
 
-const socketMessageReceived = (
-  isActiveChat,
+const socketNewMessage = (
   authUserId,
   messageId,
   senderId,
@@ -72,14 +72,19 @@ const socketMessageReceived = (
   timestamp,
   message
 ) => ({
-  type: actions.SOCKET_ON_MESSAGE_RECEIVED,
-  isActiveChat: isActiveChat,
+  type: actions.SOCKET_ON_MESSAGE,
   authUserId: authUserId,
   messageId: messageId,
   senderId: senderId,
   recipientId: recipientId,
   timestamp: timestamp,
   message,
+});
+
+export const setActiveChat = (friendId, index = null) => ({
+  type: actions.SOCKET_SET_ACTIVE_CHAT,
+  friendId: friendId,
+  index: index,
 });
 
 export const emitConnectUser =
@@ -121,7 +126,7 @@ export const emitMessage =
 
 export const emitUserTypingState =
   (socket, isTyping, roomId, senderId) => (dispatch) => {
-    dispatch(socketTypingMessage());
+    dispatch(socketNotifyTypingMessage());
     socket.emit(socketActions.typingState, {
       isTyping: isTyping,
       roomId: roomId,
@@ -139,8 +144,9 @@ export const emitMessageReceivedState =
   };
 
 export const emitMessageSeenState =
-  (socket, isActiveChat, messageId, senderId, recipientId) => (dispatch) => {
-    if (senderId !== isActiveChat) return;
+  (socket, messageId, senderId, recipientId) => (dispatch, getState) => {
+    const socketState = getState().socket;
+    if (senderId !== socketState.isActiveChat.friendId) return;
     dispatch(socketSeenMessage());
     socket.emit(socketActions.messageSeen, {
       messageId: messageId,
@@ -150,31 +156,26 @@ export const emitMessageSeenState =
   };
 
 export const onOnlineStateChange =
-  (recipientId, authUserId, userId, online, lastOnline) => (dispatch) => {
+  (recipientId, userId, online, lastOnline) => (dispatch, getState) => {
+    const authUserId = getState().auth.userId;
     if (recipientId !== authUserId) return;
     dispatch(socketChangeOnlineState(userId, online, lastOnline));
   };
 
 export const onTypingStateChange =
-  (recipientId, authUserId, userId, typingState) => (dispatch) => {
+  (recipientId, userId, typingState) => (dispatch, getState) => {
+    const authUserId = getState().auth.userId;
     if (recipientId !== authUserId) return;
     dispatch(socketChangeTypingState(userId, typingState));
   };
 
-export const onMessageReceive =
-  (
-    isActiveChat,
-    authUserId,
-    messageId,
-    senderId,
-    recipientId,
-    timestamp,
-    message
-  ) =>
-  (dispatch) => {
+export const onNewMessage =
+  (socket, messageId, senderId, recipientId, timestamp, message) =>
+  (dispatch, getState) => {
+    const activeFriendId = getState().socket.isActiveChat.friendId;
+    const authUserId = getState().auth.userId;
     dispatch(
-      socketMessageReceived(
-        isActiveChat,
+      socketNewMessage(
         authUserId,
         messageId,
         senderId,
@@ -183,6 +184,17 @@ export const onMessageReceive =
         message
       )
     );
+    /* if message is received by another client then
+        notify the server (only if another friend's chat is active) */
+    if (activeFriendId !== senderId) return;
+    dispatch(emitMessageReceivedState(socket, authUserId, senderId));
+  };
+
+export const onMessageSent =
+  (temporaryMessageId, newMessage, userId, recipientId) =>
+  (dispatch, getState) => {
+    const authUserId = getState().auth.userId;
+    if (userId !== authUserId) return;
   };
 
 export const fetchData = (isAuth, data) => (dispatch) => {
