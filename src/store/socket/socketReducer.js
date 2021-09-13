@@ -1,6 +1,7 @@
 import * as actions from "../actionTypes";
 import { updateObject } from "../../shared/updateData";
-import { SOCKET_ON_MESSAGE } from "../actionTypes";
+import { SOCKET_ON_MESSAGE, SOCKET_ON_MESSAGE_STATE } from "../actionTypes";
+import { v4 as uuid } from "uuid";
 const dateFormat = require("dateformat");
 
 /** @param {
@@ -51,6 +52,57 @@ const fetchError = (state, action) =>
     isErrorFetching: action.error,
   });
 
+const updateFriends = (state, { senderId, authUserId, message, timestamp }) => {
+  const friends = [...state.friends];
+  friends.map((friend) => {
+    let found = false;
+    if (senderId === authUserId && senderId === friend.userId) found = true;
+    if (senderId !== authUserId && senderId === friend.id) found = true;
+    if (!found) return friend;
+
+    friend.lastMessage = message;
+    friend.time = timestamp;
+    return friend;
+  });
+
+  return updateObject(state, { friends: friends });
+};
+
+const addMessage = (
+  state,
+  {
+    authUserId,
+    temporaryId,
+    senderId,
+    recipientId,
+    timestamp,
+    message,
+    encryptedMessage,
+    messageState,
+  }
+) => {
+  const updatedState = {
+    ...updateFriends(state, {
+      senderId: senderId,
+      authUserId: authUserId,
+      message: message,
+      timestamp: timestamp,
+    }),
+  };
+  updatedState.messages[recipientId] = [
+    {
+      id: temporaryId,
+      senderId: senderId,
+      recipientId: recipientId,
+      timestamp: timestamp,
+      message: encryptedMessage,
+      messageStatus: messageState,
+    },
+    ...updatedState.messages[recipientId],
+  ];
+  return updateObject(state, { ...updatedState });
+};
+
 const socketOnOnlineState = (state, { userId, onlineState, lastOnline }) => {
   const friends = [...state.friends];
   friends.map((friend) => {
@@ -91,37 +143,30 @@ const socketOnNewMessage = (
   state,
   { authUserId, messageId, senderId, recipientId, timestamp, message }
 ) => {
-  const friends = [...state.friends];
-  friends.map((friend) => {
-    let found = false;
-    if (senderId === authUserId && senderId === friend.userId) found = true;
-    if (senderId !== authUserId && senderId === friend.id) found = true;
-    if (!found) return friend;
-
-    friend.lastMessage = message;
-    friend.time = timestamp;
-    return friend;
-  });
+  const updatedState = {
+    ...updateFriends(state, {
+      senderId: senderId,
+      authUserId: authUserId,
+      message: message,
+      timestamp: timestamp,
+    }),
+  };
 
   // sort users with new messages to the top of the friend list
-  friends.sort((a, b) => new Date(b.time) - new Date(a.time));
+  updatedState.friends.sort((a, b) => new Date(b.time) - new Date(a.time));
 
   /* if chat is active, then need to keep track of the new index after the sort
      to ensure that it doesn't get closed */
   let activeChatIndex = state.isActiveChat.index;
   if (state.isActiveChat.userId) {
-    activeChatIndex = friends.findIndex(
+    activeChatIndex = updatedState.friends.findIndex(
       (friend) => friend.id === state.isActiveChat.userId
     );
-    // setActiveChat(state, {
-    //   friendId: state.isActiveChat.userId,
-    //   index: isActiveChatIndex,
-    // });
   }
 
-  const messages = { ...state.messages };
+  // const messages = { ...state.messages };
   const user = senderId === authUserId ? recipientId : senderId;
-  messages[user] = [
+  updatedState.messages[user] = [
     {
       id: messageId,
       senderId: senderId,
@@ -130,16 +175,58 @@ const socketOnNewMessage = (
       message: message,
       messageStatus: -1,
     },
-    ...messages[user],
+    ...updatedState.messages[user],
   ];
 
-  return updateObject(state, {
-    friends: friends,
-    messages: messages,
-    isActiveChat: updateObject(state.isActiveChat, {
-      index: activeChatIndex,
-    }),
-  });
+  updatedState.isActiveChat.index = activeChatIndex;
+
+  return updateObject(state, { ...updatedState });
+
+  // return updateObject(state, {
+  //   friends: friends,
+  //   messages: messages,
+  //   isActiveChat: updateObject(state.isActiveChat, {
+  //     index: activeChatIndex,
+  //   }),
+  // });
+};
+
+const socketOnMessageSent = (
+  state,
+  { authUserId, temporaryMessageId, newMessageId, userId, recipientId }
+) => {
+  const messages = { ...state.messages };
+  console.log("new", { ...state.messages });
+  const friendId = userId === authUserId ? recipientId : userId;
+  const index = messages[friendId].findIndex(
+    (message) => message.id === temporaryMessageId
+  );
+
+  if (index > -1) {
+    messages[friendId][index].id = newMessageId;
+    messages[friendId][index].messageStatus = 0;
+  }
+
+  return updateObject(state, { messages: messages });
+};
+
+const socketOnMessageState = (
+  state,
+  { authUserId, messagesId, userId, recipientId, msgState }
+) => {
+  const messages = { ...state.messages };
+  const friendId = userId === authUserId ? recipientId : userId;
+
+  console.log("state", { ...state.messages });
+
+  for (let messageId of messagesId) {
+    const index = messages[friendId].findIndex(
+      (message) => message.id === messageId
+    );
+    if (index > -1) messages[friendId][index].messageStatus = msgState;
+  }
+
+  return updateObject(state, { messages: messages });
 };
 
 const socketReducer = (state = initialState, action) => {
@@ -159,7 +246,7 @@ const socketReducer = (state = initialState, action) => {
     case actions.SOCKET_DISCONNECTED:
       return state;
     case actions.SOCKET_EMIT_MESSAGE:
-      return state;
+      return addMessage(state, action);
     case actions.SOCKET_EMIT_TYPING:
       return state;
     case actions.SOCKET_EMIT_RECEIVED:
@@ -172,6 +259,10 @@ const socketReducer = (state = initialState, action) => {
       return socketOnTypingState(state, action);
     case actions.SOCKET_ON_MESSAGE:
       return socketOnNewMessage(state, action);
+    case actions.SOCKET_ON_MESSAGE_SENT:
+      return socketOnMessageSent(state, action);
+    case actions.SOCKET_ON_MESSAGE_STATE:
+      return socketOnMessageState(state, action);
     default:
       return state;
   }

@@ -16,6 +16,7 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
+import { onMessageSent } from "../store/actions";
 
 const socket = io.connect("/");
 
@@ -32,13 +33,14 @@ function Chat({
   testingActiveChhatIndex,
   emitConnectUser,
   emitDisconnectUser,
-  emitMsgSend,
+  emitMessage,
   emitUserTyping,
-  emitMsgReceived,
   emitMsgSeen,
   onOnlineStateChange,
   onTypingStateChange,
   onNewMessage,
+  onMessageSent,
+  onMessageState,
 }) {
   useEffect(() => {
     fetchData(isAuth, { userId: authUserId });
@@ -129,19 +131,14 @@ function Chat({
     const strippedMessage = message.split(" ").join("").split("\n").join("");
     if (!strippedMessage.length || !senderId || !recipientId) return;
 
+    /** ADDED */
     const temporaryId = uuid();
     const timestamp = dateFormat(new Date(), "isoDateTime");
     const encryptedMessage = toEncrypt(message);
-    emitMsgSend(
-      socket,
-      temporaryId,
-      senderId,
-      recipientId,
-      uniqueId,
-      timestamp,
-      encryptedMessage
-    );
 
+    emitMessage(socket, senderId, recipientId, uniqueId, message);
+
+    /** ADDED */
     setFetchedUserMessages((prevState) => {
       const currentMessages = { ...prevState };
       currentMessages[recipientId] = [
@@ -158,6 +155,7 @@ function Chat({
       return currentMessages;
     });
 
+    /** ADDED */
     setFetchedFriends((prevState) => {
       const _fetchedFriends = [...prevState];
       let indexSender = -1;
@@ -279,9 +277,12 @@ function Chat({
       }
     );
 
+    /** ADDED */
     socket.on(
       socketIoActions.messageSent,
       ({ temporaryMessageId, newMessageId, userId, recipientId }) => {
+        onMessageSent(temporaryMessageId, newMessageId, userId, recipientId);
+
         if (userId !== authUserId) return;
 
         setFetchedUserMessages((prevState) => {
@@ -303,6 +304,8 @@ function Chat({
     socket.on(
       socketIoActions.messageReceived,
       ({ messagesId, userId, recipientId }) => {
+        console.log("test message received");
+        onMessageState(messagesId, userId, recipientId, 1);
         if (userId !== authUserId) return;
 
         setFetchedUserMessages((prevState) => {
@@ -323,6 +326,9 @@ function Chat({
     socket.on(
       socketIoActions.messageSeen,
       ({ messagesId, userId, recipientId }) => {
+        console.log("test message seen");
+        onMessageState(messagesId, userId, recipientId, 2);
+
         if (userId !== authUserId) return;
         setFetchedUserMessages((prevState) => {
           const currentMessages = { ...prevState };
@@ -562,7 +568,7 @@ const mapDispatchToProps = (dispatch) => {
       dispatch(actions.emitConnectUser(socket, userId, recipientId, roomId)),
     emitDisconnectUser: (socket) =>
       dispatch(actions.emitDisconnectUser(socket)),
-    emitMsgSend: (
+    emitMessage: (
       socket,
       tempId,
       senderId,
@@ -584,8 +590,6 @@ const mapDispatchToProps = (dispatch) => {
       ),
     emitUserTyping: (socket, isTyping, roomId, senderId) =>
       dispatch(actions.emitUserTypingState(socket, isTyping, roomId, senderId)),
-    emitMsgReceived: (socket, userId, recipientId) =>
-      dispatch(actions.emitMessageReceivedState(socket, userId, recipientId)),
     emitMsgSeen: (socket, messageId, senderId, recipientId) =>
       dispatch(
         actions.emitMessageSeenState(socket, messageId, senderId, recipientId)
@@ -613,6 +617,19 @@ const mapDispatchToProps = (dispatch) => {
           timestamp,
           message
         )
+      ),
+    onMessageSent: (temporaryMessageId, newMessageId, userId, recipientId) =>
+      dispatch(
+        actions.onMessageSent(
+          temporaryMessageId,
+          newMessageId,
+          userId,
+          recipientId
+        )
+      ),
+    onMessageState: (messagesId, userId, recipientId, msgState) =>
+      dispatch(
+        actions.onMessageState(messagesId, userId, recipientId, msgState)
       ),
   };
 };

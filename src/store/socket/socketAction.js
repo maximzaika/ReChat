@@ -1,6 +1,8 @@
 import * as actions from "../actionTypes";
 import * as socketActions from "../../shared/socketIoActionTypes";
-import { SOCKET_SET_ACTIVE_CHAT } from "../actionTypes";
+import dateFormat from "dateformat";
+import { v4 as uuid } from "uuid";
+import { toEncrypt } from "../../shared/aes";
 
 const fetchFriendsSuccess = (friendsData) => {
   const tempFriends = [...friendsData];
@@ -34,9 +36,32 @@ const socketConnected = () => ({
 const socketDisconnected = () => ({
   type: actions.SOCKET_DISCONNECTED,
 });
-
-const socketSendMessage = () => ({
+// socketSendMessage(
+//   temporaryMessageId,
+//   senderId,
+//   recipientId,
+//   timestamp,
+//   encryptedMessage,
+//   -1
+// )
+const socketSendMessage = (
+  authUserId,
+  temporaryId,
+  senderId,
+  recipientId,
+  timestamp,
+  message,
+  encryptedMessage
+) => ({
   type: actions.SOCKET_EMIT_MESSAGE,
+  authUserId: authUserId,
+  temporaryId: temporaryId,
+  senderId: senderId,
+  recipientId: recipientId,
+  timestamp: timestamp,
+  message: message,
+  encryptedMessage: encryptedMessage,
+  messageStatus: -1,
 });
 
 const socketNotifyTypingMessage = () => ({
@@ -81,6 +106,36 @@ const socketNewMessage = (
   message,
 });
 
+const socketOnMessageSent = (
+  authUserId,
+  temporaryMessageId,
+  newMessageId,
+  userId,
+  recipientId
+) => ({
+  type: actions.SOCKET_ON_MESSAGE_SENT,
+  authUserId: authUserId,
+  temporaryMessageId: temporaryMessageId,
+  newMessageId: newMessageId,
+  userId: userId,
+  recipientId: recipientId,
+});
+
+const socketOnMessageState = (
+  authUserId,
+  messagesId,
+  userId,
+  recipientId,
+  msgState
+) => ({
+  type: actions.SOCKET_ON_MESSAGE_STATE,
+  authUserId: authUserId,
+  messagesId: messagesId,
+  userId: userId,
+  recipientId: recipientId,
+  msgState: msgState,
+});
+
 export const setActiveChat = (friendId, index = null) => ({
   type: actions.SOCKET_SET_ACTIVE_CHAT,
   friendId: friendId,
@@ -103,17 +158,24 @@ export const emitDisconnectUser = (socket) => (dispatch) => {
 };
 
 export const emitMessage =
-  (
-    socket,
-    temporaryMessageId,
-    senderId,
-    recipientId,
-    roomId,
-    timestamp,
-    encryptedMessage
-  ) =>
-  (dispatch) => {
-    dispatch(socketSendMessage());
+  (socket, senderId, recipientId, roomId, message) => (dispatch, getState) => {
+    const authUserId = getState().auth.userId;
+    const temporaryMessageId = uuid();
+    const timestamp = dateFormat(new Date(), "isoDateTime");
+    const encryptedMessage = toEncrypt(message);
+
+    dispatch(
+      socketSendMessage(
+        authUserId,
+        temporaryMessageId,
+        senderId,
+        recipientId,
+        timestamp,
+        message,
+        encryptedMessage
+      )
+    );
+
     socket.emit(socketActions.sendMessage, {
       temporaryId: temporaryMessageId,
       senderId: senderId,
@@ -134,14 +196,14 @@ export const emitUserTypingState =
     });
   };
 
-export const emitMessageReceivedState =
-  (socket, userId, recipientId) => (dispatch) => {
-    dispatch(socketReceivedMessage());
-    socket.emit(socketActions.messageState, {
-      userId: userId,
-      recipientId: recipientId,
-    });
-  };
+// export const emitMessageReceivedState =
+//   (socket, userId, recipientId) => (dispatch) => {
+//     dispatch(socketReceivedMessage());
+//     socket.emit(socketActions.messageState, {
+//       userId: userId,
+//       recipientId: recipientId,
+//     });
+//   };
 
 export const emitMessageSeenState =
   (socket, messageId, senderId, recipientId) => (dispatch, getState) => {
@@ -186,15 +248,46 @@ export const onNewMessage =
     );
     /* if message is received by another client then
         notify the server (only if another friend's chat is active) */
-    if (activeFriendId !== senderId) return;
-    dispatch(emitMessageReceivedState(socket, authUserId, senderId));
+    // if (activeFriendId !== senderId) return;
+    // dispatch(emitMessageReceivedState(socket, authUserId, senderId));
+    dispatch(socketReceivedMessage());
+    console.log("test");
+    socket.emit(socketActions.messageState, {
+      userId: authUserId,
+      recipientId: senderId,
+    });
   };
 
 export const onMessageSent =
-  (temporaryMessageId, newMessage, userId, recipientId) =>
+  (temporaryMessageId, newMessageId, userId, recipientId) =>
   (dispatch, getState) => {
     const authUserId = getState().auth.userId;
     if (userId !== authUserId) return;
+    dispatch(
+      socketOnMessageSent(
+        authUserId,
+        temporaryMessageId,
+        newMessageId,
+        userId,
+        recipientId
+      )
+    );
+  };
+
+export const onMessageState =
+  (messagesId, userId, recipientId, msgState) => (dispatch, getState) => {
+    const authUserId = getState().auth.userId;
+    if (userId !== authUserId) return;
+
+    dispatch(
+      socketOnMessageState(
+        authUserId,
+        messagesId,
+        userId,
+        recipientId,
+        msgState
+      )
+    );
   };
 
 export const fetchData = (isAuth, data) => (dispatch) => {

@@ -13,9 +13,10 @@ export {
   emitDisconnectUser,
   emitMessage,
   emitUserTypingState,
-  emitMessageReceivedState,
   emitMessageSeenState,
   onOnlineStateChange,
   onTypingStateChange,
   onNewMessage,
+  onMessageSent,
+  onMessageState,
 } from "./socket/socketAction";
