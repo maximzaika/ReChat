@@ -1,6 +1,10 @@
 import * as actions from "../actionTypes";
 import { updateObject } from "../../shared/updateData";
-import { SOCKET_ON_MESSAGE, SOCKET_ON_MESSAGE_STATE } from "../actionTypes";
+import {
+  SOCKET_ON_MESSAGE,
+  SOCKET_ON_MESSAGE_STATE,
+  SOCKET_SHOW_CHAT,
+} from "../actionTypes";
 import { v4 as uuid } from "uuid";
 const dateFormat = require("dateformat");
 
@@ -51,6 +55,13 @@ const fetchError = (state, action) =>
     isFetching: false,
     isErrorFetching: action.error,
   });
+
+const updateInput = (state, { input, userTyping }) => {
+  const friends = [...state.friends];
+  friends[state.isActiveChat.index].inputMessage = input;
+  // friends[state.isActiveChat.index].userTyping = userTyping;
+  return updateObject(state, { friends: friends });
+};
 
 const updateFriends = (state, { senderId, authUserId, message, timestamp }) => {
   const friends = [...state.friends];
@@ -103,6 +114,12 @@ const addMessage = (
   return updateObject(state, { ...updatedState });
 };
 
+const socketEmitTyping = (state, { userTyping }) => {
+  const friends = [...state.friends];
+  friends[state.isActiveChat.index].userTyping = userTyping;
+  return updateObject(state, { friends: friends });
+};
+
 const socketOnOnlineState = (state, { userId, onlineState, lastOnline }) => {
   const friends = [...state.friends];
   friends.map((friend) => {
@@ -111,6 +128,7 @@ const socketOnOnlineState = (state, { userId, onlineState, lastOnline }) => {
     friends.lastOnline = dateFormat(lastOnline, "isoDateTime");
     return friend;
   });
+  console.log("testtttttt");
   return updateObject(state, { friends: friends });
 };
 
@@ -125,17 +143,26 @@ const socketOnTypingState = (state, { userId, typingState }) => {
 };
 
 const setActiveChat = (state, { friendId, index }) => {
-  if (!index) {
-    return updateObject(state, {
-      isActiveChat: updateObject(state.isActiveChat, {
-        friendId: friendId,
-        index: index,
-      }),
-    });
-  }
+  console.log(index);
 
+  // if (!index) {
   return updateObject(state, {
-    isActiveChat: updateObject(state.isActiveChat, { friendId: friendId }),
+    isActiveChat: updateObject(state.isActiveChat, {
+      friendId: friendId,
+      index: index,
+    }),
+  });
+  // }
+
+  // return updateObject(state, {
+  //   isActiveChat: updateObject(state.isActiveChat, { friendId: friendId }),
+  // });
+};
+
+const showChat = (state, { friendId }) => {
+  if (friendId in state.messages) return state;
+  return updateObject(state, {
+    messages: { ...state.messages, [friendId]: [] },
   });
 };
 
@@ -203,6 +230,7 @@ const socketOnMessageSent = (
   );
 
   if (index > -1) {
+    console.log("[redux] updating id and messageStatus");
     messages[friendId][index].id = newMessageId;
     messages[friendId][index].messageStatus = 0;
   }
@@ -217,7 +245,10 @@ const socketOnMessageState = (
   const messages = { ...state.messages };
   const friendId = userId === authUserId ? recipientId : userId;
 
-  console.log("state", { ...state.messages });
+  // console.log("userId", userId);
+  // console.log("authUserId", authUserId);
+  // console.log("recipientId", recipientId);
+  // console.log("state", { ...state.messages });
 
   for (let messageId of messagesId) {
     const index = messages[friendId].findIndex(
@@ -239,6 +270,10 @@ const socketReducer = (state = initialState, action) => {
       return fetchMessagesSuccess(state, action);
     case actions.SOCKET_FETCH_ERROR:
       return fetchError(state, action);
+    case actions.SOCKET_UPDATE_INPUT:
+      return updateInput(state, action);
+    case actions.SOCKET_SHOW_ACTIVE_CHAT:
+      return showChat(state, action);
     case actions.SOCKET_SET_ACTIVE_CHAT:
       return setActiveChat(state, action);
     case actions.SOCKET_CONNECTED:
@@ -248,7 +283,7 @@ const socketReducer = (state = initialState, action) => {
     case actions.SOCKET_EMIT_MESSAGE:
       return addMessage(state, action);
     case actions.SOCKET_EMIT_TYPING:
-      return state;
+      return socketEmitTyping(state, action);
     case actions.SOCKET_EMIT_RECEIVED:
       return state;
     case actions.SOCKET_EMIT_SEEN:

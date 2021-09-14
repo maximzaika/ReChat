@@ -19,4 +19,6 @@ export {
   onNewMessage,
   onMessageSent,
   onMessageState,
+  messageInput,
+  showChat,
 } from "./socket/socketAction";
