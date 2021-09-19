@@ -1,14 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import { connect } from "react-redux";
 import { useHistory } from "react-router";
 import * as actions from "../store/actions";
 import io from "socket.io-client";
 import * as socketIoActions from "../shared/socketIoActionTypes";
-import { toDecrypt, toEncrypt } from "../shared/aes";
-import { v4 as uuid } from "uuid";
 
 import HorizontalLine from "../components/UI/HorizontalLine/HorizontalLine";
-import useFetch from "../hooks/useFetchJson";
 import DivOverflowY from "../components/UI/DivOverflowY/DivOverflowY";
 import TextArea from "../components/UI/TextArea/TextArea";
 import IcoSendMessage from "../assets/ico/ico-send-message";
@@ -16,6 +13,7 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
+import { toDecrypt } from "../shared/aes";
 
 const socket = io.connect("/");
 
@@ -24,72 +22,35 @@ function Chat({
   authUserId,
   authUserFName,
   authUserSName,
-  socketProcess,
+  fetchData,
+  messageInput,
+  showChat,
+  setActiveChat,
+  friends,
+  messages,
+  isActiveChat,
+  indexOfActiveChat,
+  emitConnectUser,
+  emitDisconnectUser,
+  emitMessage,
+  emitUserTyping,
+  emitMsgSeen,
+  onOnlineStateChange,
+  onTypingStateChange,
+  onNewMessage,
+  onMessageSent,
+  onMessageState,
 }) {
+  useEffect(() => {
+    fetchData(socket, isAuth, { userId: authUserId });
+  }, [fetchData]);
+
   const dateFormat = require("dateformat");
-  const [fetchedFriends, setFetchedFriends] = useFetch(
-    "/friendList",
-    ["inputMessage", "userColor"],
-    isAuth,
-    { userId: authUserId }
-  );
-  const [fetchedUserMessages, setFetchedUserMessages] = useFetch(
-    "/messages",
-    null,
-    isAuth,
-    {
-      userId: authUserId,
-    }
-  );
-  const [isActiveChat, setIsActiveChat] = useState(null);
-  const [indexOfActiveChat, setIndexOfActiveChat] = useState(null);
   const history = useHistory();
 
-  const _isActiveChat = useRef(isActiveChat);
-
-  useEffect(() => {
-    _isActiveChat.current = isActiveChat;
-  }, [isActiveChat]);
-
-  useEffect(() => {
-    if (!isActiveChat) {
-      const tempFriends = [...fetchedFriends];
-      for (let friend of tempFriends) {
-        friend["userColor"] = Math.floor(Math.random() * 5);
-      }
-    }
-  }, [fetchedFriends, isActiveChat]);
-
+  /** ADDED */
   const onInputMessageHandler = (value) => {
-    const tempUsers = [...fetchedFriends];
-    tempUsers[indexOfActiveChat].inputMessage = value;
-
-    // Set typing status on the sender client side to prevent
-    // posting "sending status" to the socket on each key press
-    if (tempUsers[indexOfActiveChat].userTyping === undefined) {
-      tempUsers[indexOfActiveChat].userTyping = false;
-    }
-
-    // notify another user that current user is not typing
-    if (value.length === 0 && tempUsers[indexOfActiveChat].userTyping) {
-      tempUsers[indexOfActiveChat].userTyping = false;
-      socket.emit(socketIoActions.typingState, {
-        isTyping: false,
-        roomId: tempUsers[indexOfActiveChat].uniqueId,
-      });
-    }
-
-    // notify another user that current user is typing
-    if (value.length > 0 && !tempUsers[indexOfActiveChat].userTyping) {
-      tempUsers[indexOfActiveChat].userTyping = true;
-      socket.emit(socketIoActions.typingState, {
-        isTyping: true,
-        senderId: authUserId,
-        roomId: tempUsers[indexOfActiveChat].uniqueId,
-      });
-    }
-
-    setFetchedFriends(tempUsers);
+    messageInput(socket, value);
   };
 
   const onSubmitMessageHandler = (
@@ -106,248 +67,69 @@ function Chat({
     const strippedMessage = message.split(" ").join("").split("\n").join("");
     if (!strippedMessage.length || !senderId || !recipientId) return;
 
-    const temporaryId = uuid();
-    const timestamp = dateFormat(new Date(), "isoDateTime");
-    const encryptedMessage = toEncrypt(message);
-    socket.emit(socketIoActions.sendMessage, {
-      temporaryId: temporaryId,
-      senderId: senderId,
-      recipientId: recipientId,
-      roomId: uniqueId,
-      timestamp: timestamp,
-      message: encryptedMessage,
-    });
-
-    setFetchedUserMessages((prevState) => {
-      const currentMessages = { ...prevState };
-      currentMessages[recipientId] = [
-        {
-          id: temporaryId,
-          senderId: senderId,
-          recipientId: recipientId,
-          timestamp: timestamp,
-          message: encryptedMessage,
-          messageStatus: -1,
-        },
-        ...currentMessages[recipientId],
-      ];
-      return currentMessages;
-    });
-
-    setFetchedFriends((prevState) => {
-      const _fetchedFriends = [...prevState];
-      let indexSender = -1;
-      if (senderId === authUserId) {
-        indexSender = _fetchedFriends.findIndex(
-          (user) => senderId === user.userId
-        );
-      } else {
-        indexSender = _fetchedFriends.findIndex((user) => senderId === user.id);
-      }
-
-      if (indexSender === -1) return [...prevState];
-      _fetchedFriends[indexSender].lastMessage = encryptedMessage;
-      _fetchedFriends[indexSender].time = timestamp;
-      return _fetchedFriends;
-    });
-
-    // reset input form
-    onInputMessageHandler("");
+    emitMessage(socket, senderId, recipientId, uniqueId, message);
   };
 
   useEffect(() => {
+    /** added */
     socket.on(
       socketIoActions.onlineStatus,
       ({ recipientId, socketId, userId, online, lastOnline }) => {
-        if (recipientId !== authUserId) return;
-
-        setFetchedFriends((prevState) => {
-          const users = [...prevState];
-          const index = users.findIndex((user) => user.id === userId);
-          users[index].onlineState = online;
-          users[index].lastOnline = dateFormat(lastOnline, "isoDateTime");
-          return users;
-        });
+        onOnlineStateChange(recipientId, userId, online, lastOnline);
       }
     );
 
+    /** added */
     socket.on(
       socketIoActions.typingState,
       ({ recipientId, userId, typingState }) => {
-        if (recipientId !== authUserId) return;
-
-        setFetchedFriends((prevState) => {
-          const users = [...prevState];
-          const index = users.findIndex((user) => user.id === userId);
-          users[index].typingState = typingState;
-          return users;
-        });
+        onTypingStateChange(recipientId, userId, typingState);
       }
     );
 
+    /** added */
     socket.on(
       socketIoActions.message,
       ({ id, senderId, recipientId, timestamp, message, messageStatus }) => {
-        if (senderId === _isActiveChat.current) {
-          socket.emit(socketIoActions.messageSeen, {
-            messageId: id,
-            userId: senderId,
-            recipientId: recipientId,
-          });
-        }
-
-        setFetchedFriends((prevState) => {
-          const _fetchedFriends = [...prevState];
-          let indexSender = -1;
-          if (senderId === authUserId) {
-            indexSender = _fetchedFriends.findIndex(
-              (user) => senderId === user.userId
-            );
-          } else {
-            indexSender = _fetchedFriends.findIndex(
-              (user) => senderId === user.id
-            );
-          }
-
-          if (indexSender === -1) return [...prevState];
-          _fetchedFriends[indexSender].lastMessage = message;
-          _fetchedFriends[indexSender].time = timestamp;
-
-          // sort users with new messages to the top of the friend list
-          _fetchedFriends.sort((a, b) => new Date(b.time) - new Date(a.time));
-
-          // if chat is active, then need to keep track of the new index after the sort
-          // to ensure that it doesn't get closed
-          if (_isActiveChat.current) {
-            const newActiveUser = _fetchedFriends.findIndex(
-              (user) => user.id === _isActiveChat.current
-            );
-            setIndexOfActiveChat(newActiveUser);
-          }
-
-          return _fetchedFriends;
-        });
-
-        setFetchedUserMessages((prevState) => {
-          const currentMessages = { ...prevState };
-          let user = senderId === authUserId ? recipientId : senderId;
-          currentMessages[user] = [
-            {
-              id: id,
-              senderId: senderId,
-              recipientId: recipientId,
-              timestamp: timestamp,
-              message: message,
-              messageStatus: -1,
-            },
-            ...currentMessages[user],
-          ];
-          return currentMessages;
-        });
-
-        // if message is received by another client then
-        // notify the server (only if another friend's chat
-        // is active
-        if (_isActiveChat.current === senderId) return;
-        socket.emit(socketIoActions.messageStatus, {
-          userId: authUserId,
-          recipientId: senderId,
-        });
+        emitMsgSeen(socket, id, senderId, recipientId);
+        onNewMessage(socket, id, senderId, recipientId, timestamp, message);
       }
     );
 
+    /** ADDED */
     socket.on(
       socketIoActions.messageSent,
       ({ temporaryMessageId, newMessageId, userId, recipientId }) => {
-        if (userId !== authUserId) return;
-
-        setFetchedUserMessages((prevState) => {
-          const currentMessages = { ...prevState };
-          let _userId = userId === authUserId ? recipientId : userId;
-
-          const index = currentMessages[_userId].findIndex(
-            (message) => message.id === temporaryMessageId
-          );
-          if (index > -1) {
-            currentMessages[_userId][index].id = newMessageId;
-            currentMessages[_userId][index].messageStatus = 0;
-          }
-          return currentMessages;
-        });
+        onMessageSent(temporaryMessageId, newMessageId, userId, recipientId);
       }
     );
 
+    /** added */
     socket.on(
       socketIoActions.messageReceived,
       ({ messagesId, userId, recipientId }) => {
-        if (userId !== authUserId) return;
-
-        setFetchedUserMessages((prevState) => {
-          const currentMessages = { ...prevState };
-          let _userId = userId === authUserId ? recipientId : userId;
-
-          for (let messageId of messagesId) {
-            const index = currentMessages[_userId].findIndex(
-              (message) => message.id === messageId
-            );
-            if (index > -1) currentMessages[_userId][index].messageStatus = 1;
-          }
-          return currentMessages;
-        });
+        onMessageState(messagesId, userId, recipientId, 1);
       }
     );
 
+    /** added */
     socket.on(
       socketIoActions.messageSeen,
       ({ messagesId, userId, recipientId }) => {
-        if (userId !== authUserId) return;
-        setFetchedUserMessages((prevState) => {
-          const currentMessages = { ...prevState };
-          let _userId = userId === authUserId ? recipientId : userId;
-
-          for (let messageId of messagesId) {
-            const index = currentMessages[_userId].findIndex(
-              (message) => message.id === messageId
-            );
-            if (index > -1) currentMessages[_userId][index].messageStatus = 2;
-          }
-          return currentMessages;
-        });
+        onMessageState(messagesId, userId, recipientId, 2);
       }
     );
-  }, [socket]);
-
-  useEffect(() => {
-    console.log(fetchedFriends);
-  }, [fetchedFriends]);
+  }, [
+    emitMsgSeen,
+    onMessageSent,
+    onMessageState,
+    onNewMessage,
+    onOnlineStateChange,
+    onTypingStateChange,
+  ]);
 
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
-    // if no users fetched or user's chat is already active
-    // then avoid fetching / re-rendering again
-    if (fetchedFriends.length < 0 || isActiveChat === recipientId || !uniqueId)
-      return;
-
-    if (recipientId || recipientId !== "") {
-      socket.emit(socketIoActions.joinRoom, {
-        userId: authUserId,
-        recipientId: recipientId,
-        roomId: uniqueId,
-      });
-
-      if (isActiveChat) {
-        socket.emit(socketIoActions.disconnectRoom);
-      }
-    }
-    let _fetchedMessages = { ...fetchedUserMessages };
-    // let userMessages = [];
-    if (!(recipientId in _fetchedMessages)) {
-      _fetchedMessages = { ...fetchedUserMessages, [recipientId]: [] };
-    }
-
-    setFetchedUserMessages(_fetchedMessages);
-    // setUserMessages(userMessages);
-    setIsActiveChat(recipientId);
-    setIndexOfActiveChat(index);
+    showChat(socket, recipientId, index, uniqueId);
     history.push("/chat/" + recipientId);
   };
 
@@ -368,7 +150,6 @@ function Chat({
       _prefix = prefix ? "" : "";
       return _prefix + "yesterday" + postfix;
     } else if (differenceInDays <= 7 && differenceInDays > 1) {
-      // const dayOfTheWeek = prefix ? "dddd" : "ddd";
       return _prefix + dateFormat(time, "dddd") + postfix;
     } else {
       return _prefix + dateFormat(time, "dd/mm/yyyy") + postfix;
@@ -380,7 +161,6 @@ function Chat({
       <div className="h-screen flex flex-col">
         <div className="flex flex-row gap-4 py-2 bg-gray-700 pl-2 pr-4">
           <ChatAvatar
-            // imgName={fetchedFriends[indexOfActiveChat].avatar}
             friendName={authUserFName}
             imgClass="h-12 w-12"
             textClass="h-12 w-12"
@@ -389,10 +169,8 @@ function Chat({
 
         <DivOverflowY>
           <ul className="col-span-3 bg-black w-80">
-            {fetchedFriends &&
-              fetchedFriends.map((friend, index) => {
-                // ensure that added friends are shown only (logically there should not be
-                // friends that are not user's friends - handled on backend
+            {friends.length &&
+              friends.map((friend, index) => {
                 if (friend.userId !== authUserId) {
                   return null;
                 }
@@ -407,8 +185,6 @@ function Chat({
                   time,
                   userColor,
                 } = friend;
-
-                console.log(lastMessage);
 
                 return (
                   <li
@@ -456,25 +232,25 @@ function Chat({
         {indexOfActiveChat !== null && (
           <div className="flex flex-row gap-4 py-2 bg-gray-700 pl-2 pr-4">
             <ChatAvatar
-              imgName={fetchedFriends[indexOfActiveChat].avatar}
-              friendName={fetchedFriends[indexOfActiveChat].name}
+              imgName={friends[indexOfActiveChat].avatar}
+              friendName={friends[indexOfActiveChat].name}
               imgClass="h-12 w-12"
               textClass="h-12 w-12"
-              userColor={fetchedFriends[indexOfActiveChat].userColor}
+              userColor={friends[indexOfActiveChat].userColor}
             />
             <div className="flex flex-col justify-center">
               <h1 className="m-0 font-semibold text-base my-0">
-                {fetchedFriends[indexOfActiveChat].name}
+                {friends[indexOfActiveChat].name}
               </h1>
               <h2 className="italic font-normal text-sm my-0">
-                {fetchedFriends[indexOfActiveChat].typingState &&
-                fetchedFriends[indexOfActiveChat].onlineState
+                {friends[indexOfActiveChat].typingState &&
+                friends[indexOfActiveChat].onlineState
                   ? "Typing..."
-                  : !fetchedFriends[indexOfActiveChat].typingState &&
-                    fetchedFriends[indexOfActiveChat].onlineState
+                  : !friends[indexOfActiveChat].typingState &&
+                    friends[indexOfActiveChat].onlineState
                   ? "Online now"
                   : `Last seen ${getTime(
-                      fetchedFriends[indexOfActiveChat].lastOnline,
+                      friends[indexOfActiveChat].lastOnline,
                       true
                     )}`}
               </h2>
@@ -486,7 +262,7 @@ function Chat({
 
         <ChatUserMessages
           isActiveChat={isActiveChat}
-          messages={fetchedUserMessages[isActiveChat]}
+          messages={messages[isActiveChat]}
           authUserId={authUserId}
           setMessages={(messages) => {}}
         />
@@ -497,8 +273,8 @@ function Chat({
             onSubmit={(event) =>
               onSubmitMessageHandler(
                 event,
-                fetchedFriends[indexOfActiveChat].inputMessage,
-                fetchedFriends[indexOfActiveChat].uniqueId,
+                friends[indexOfActiveChat].inputMessage,
+                friends[indexOfActiveChat].uniqueId,
                 authUserId,
                 isActiveChat
               )
@@ -507,12 +283,12 @@ function Chat({
             <TextArea
               placeholder="Type a message"
               changed={(value) => onInputMessageHandler(value)}
-              value={fetchedFriends[indexOfActiveChat].inputMessage}
+              value={friends[indexOfActiveChat].inputMessage}
               keyPressed={(event) =>
                 onSubmitMessageHandler(
                   event,
-                  fetchedFriends[indexOfActiveChat].inputMessage,
-                  fetchedFriends[indexOfActiveChat].uniqueId,
+                  friends[indexOfActiveChat].inputMessage,
+                  friends[indexOfActiveChat].uniqueId,
                   authUserId,
                   isActiveChat
                 )
@@ -530,6 +306,10 @@ function Chat({
 
 const mapStateToProps = (state) => {
   return {
+    friends: state.socket.friends,
+    messages: state.socket.messages,
+    isActiveChat: state.socket.isActiveChat.friendId,
+    indexOfActiveChat: state.socket.isActiveChat.index,
     isAuth: state.auth.token !== null,
     authUserId: state.auth.userId !== null ? state.auth.userId : null,
     authUserFName: state.auth.firstName !== null ? state.auth.firstName : null,
@@ -539,8 +319,81 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    socketProcess: (encrypt, msg, cipher) =>
-      dispatch(actions.socketProcess(encrypt, msg, cipher)),
+    fetchData: (socket, isAuth, friends) =>
+      dispatch(actions.fetchData(socket, isAuth, friends)),
+    messageInput: (socket, value) =>
+      dispatch(actions.messageInput(socket, value)),
+    setActiveChat: (friendId, index) =>
+      dispatch(actions.setActiveChat(friendId, index)),
+    showChat: (socket, friendId, index, uniqueId) =>
+      dispatch(actions.showChat(socket, friendId, index, uniqueId)),
+    emitConnectUser: (socket, userId, recipientId, roomId) =>
+      dispatch(actions.emitConnectUser(socket, userId, recipientId, roomId)),
+    emitDisconnectUser: (socket) =>
+      dispatch(actions.emitDisconnectUser(socket)),
+    emitMessage: (
+      socket,
+      tempId,
+      senderId,
+      recipientId,
+      roomId,
+      timestamp,
+      message
+    ) =>
+      dispatch(
+        actions.emitMessage(
+          socket,
+          tempId,
+          senderId,
+          recipientId,
+          roomId,
+          timestamp,
+          message
+        )
+      ),
+    emitUserTyping: (socket, isTyping, roomId, senderId) =>
+      dispatch(actions.emitUserTypingState(socket, isTyping, roomId, senderId)),
+    emitMsgSeen: (socket, messageId, senderId, recipientId) =>
+      dispatch(
+        actions.emitMessageSeenState(socket, messageId, senderId, recipientId)
+      ),
+    onOnlineStateChange: (recipientId, userId, online, lastOnline) =>
+      dispatch(
+        actions.onOnlineStateChange(recipientId, userId, online, lastOnline)
+      ),
+    onTypingStateChange: (recipientId, userId, typingState) =>
+      dispatch(actions.onTypingStateChange(recipientId, userId, typingState)),
+    onNewMessage: (
+      socket,
+      messageId,
+      senderId,
+      recipientId,
+      timestamp,
+      message
+    ) =>
+      dispatch(
+        actions.onNewMessage(
+          socket,
+          messageId,
+          senderId,
+          recipientId,
+          timestamp,
+          message
+        )
+      ),
+    onMessageSent: (temporaryMessageId, newMessageId, userId, recipientId) =>
+      dispatch(
+        actions.onMessageSent(
+          temporaryMessageId,
+          newMessageId,
+          userId,
+          recipientId
+        )
+      ),
+    onMessageState: (messagesId, userId, recipientId, msgState) =>
+      dispatch(
+        actions.onMessageState(messagesId, userId, recipientId, msgState)
+      ),
   };
 };
 

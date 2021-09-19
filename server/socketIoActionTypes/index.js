@@ -8,7 +8,7 @@ module.exports = Object.freeze({
   sendMessage: "sendMessage",
   message: "message",
 
-  messageStatus: "messageStatus",
+  messageState: "messageState",
   messageSent: "messageSent",
   messageReceived: "messageReceived",
   messageSeen: "messageSeen",

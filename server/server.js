@@ -120,50 +120,31 @@ function MessageState(messagesId, userId, recipientId) {
 
 io.on(actions.connection, (socket) => {
   socket.on(actions.joinRoom, ({ userId, recipientId, roomId }) => {
-    const date = new Date();
     // creates unique socket id of the connected user
-    const user = newConnectedUserHandler(
+    const [user, notConnected] = newConnectedUserHandler(
       socket.id,
       userId,
       recipientId,
       roomId
     );
-    // check whether there are any connected users in the room
-    const connectedUser = findConnectedUserHandler(socket.id, roomId);
 
-    log(
-      `[connection (joinRoom)] ${userId} joined ${recipientId}. Room ${roomId}`,
-      "green"
-    );
-    socket.join(user.roomId);
-
-    // if there are users online then let the new connected user know their status
-    if (connectedUser) {
-      log(`[connection (onlineStatus)] ${userId} notifies ${recipientId}`);
-      socket.emit(
-        actions.onlineStatus,
-        new UserOnlineState(
-          connectedUser.socketId,
-          connectedUser.userId,
-          connectedUser.recipientId,
-          date,
-          true
-        )
+    if (notConnected) {
+      log(
+        `[connection (joinRoom)] ${userId} joined ${recipientId}. Room ${roomId}`,
+        "green"
       );
+      socket.join(user.roomId);
     }
+  });
 
-    // If user has opened the chat, it would show their online status
+  // If user has opened the chat, it would let everyone know about their online state
+  socket.on(actions.onlineStatus, ({ roomId, userId, recipientId }) => {
+    const date = new Date();
     socket.broadcast
-      .to(user.roomId)
+      .to(roomId)
       .emit(
         actions.onlineStatus,
-        new UserOnlineState(
-          user.socketId,
-          user.userId,
-          user.recipientId,
-          date,
-          true
-        )
+        new UserOnlineState(socket.id, userId, recipientId, date, true)
       );
 
     // find all the messages that have status of 1 = received
@@ -231,13 +212,13 @@ io.on(actions.connection, (socket) => {
 
   /* If user's another friend window is open, and another friend has sent the message
   then need to notify the sender that the message is received */
-  socket.on(actions.messageStatus, ({ userId, recipientId }) => {
+  socket.on(actions.messageState, ({ userId, recipientId }) => {
     const senderId = checkMessageReceivedHandler(userId, recipientId);
 
     if (senderId) {
       // 1 = received
       const messagesId = updateMessagesStatusHandler(recipientId, userId, 1);
-      log(`[messageStatus (messageReceived)] ${recipientId} from ${userId}`);
+      log(`[messageState (messageReceived)] ${recipientId} from ${userId}`);
       socket.broadcast
         .to(senderId.roomId)
         .emit(
@@ -277,6 +258,7 @@ io.on(actions.connection, (socket) => {
 
   socket.on(actions.disconnectRoom, () => {
     const user = disconnectUserHandler(socket.id);
+    console.log("disconnected user", user);
     if (!user) return;
 
     log(
