@@ -120,50 +120,31 @@ function MessageState(messagesId, userId, recipientId) {
 
 io.on(actions.connection, (socket) => {
   socket.on(actions.joinRoom, ({ userId, recipientId, roomId }) => {
-    const date = new Date();
     // creates unique socket id of the connected user
-    const user = newConnectedUserHandler(
+    const [user, notConnected] = newConnectedUserHandler(
       socket.id,
       userId,
       recipientId,
       roomId
     );
-    // check whether there are any connected users in the room
-    const connectedUser = findConnectedUserHandler(socket.id, roomId);
 
-    log(
-      `[connection (joinRoom)] ${userId} joined ${recipientId}. Room ${roomId}`,
-      "green"
-    );
-    socket.join(user.roomId);
-
-    // if there are users online then let the new connected user know their status
-    if (connectedUser) {
-      log(`[connection (onlineStatus)] ${userId} notifies ${recipientId}`);
-      socket.emit(
-        actions.onlineStatus,
-        new UserOnlineState(
-          connectedUser.socketId,
-          connectedUser.userId,
-          connectedUser.recipientId,
-          date,
-          true
-        )
+    if (notConnected) {
+      log(
+        `[connection (joinRoom)] ${userId} joined ${recipientId}. Room ${roomId}`,
+        "green"
       );
+      socket.join(user.roomId);
     }
+  });
 
-    // If user has opened the chat, it would show their online status
+  // If user has opened the chat, it would let everyone know about their online state
+  socket.on(actions.onlineStatus, ({ roomId, userId, recipientId }) => {
+    const date = new Date();
     socket.broadcast
-      .to(user.roomId)
+      .to(roomId)
       .emit(
         actions.onlineStatus,
-        new UserOnlineState(
-          user.socketId,
-          user.userId,
-          user.recipientId,
-          date,
-          true
-        )
+        new UserOnlineState(socket.id, userId, recipientId, date, true)
       );
 
     // find all the messages that have status of 1 = received
@@ -277,6 +258,7 @@ io.on(actions.connection, (socket) => {
 
   socket.on(actions.disconnectRoom, () => {
     const user = disconnectUserHandler(socket.id);
+    console.log("disconnected user", user);
     if (!user) return;
 
     log(

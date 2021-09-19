@@ -24,12 +24,22 @@ function ConnectedUser(socketId, userId, recipientId, roomId) {
  * @param {string} roomId Unique room id received from the client. Usually it is
  *                        a combination of user ids: id_id (but on the client
  *                        side it is encrypted)
- * @return {ConnectedUser} newUser Data of a new connected user.
+ * @return {[ConnectedUser, boolean]} newUser Data of a new connected user.
  */
 const newConnectedUserHandler = (socketId, userId, recipientId, roomId) => {
+  // checks whether user is connected, if he is then just return it
+  const checkConnectedUser = connectedUsers.find(
+    (user) =>
+      user.socketId === socketId &&
+      user.roomId === roomId &&
+      user.userId === userId
+  );
+  if (checkConnectedUser) return [checkConnectedUser, false];
+
+  // if user isn't connected then add him to the array of connected users
   const newUser = new ConnectedUser(socketId, userId, recipientId, roomId);
   connectedUsers.push(newUser);
-  return newUser;
+  return [newUser, true];
 };
 
 /**

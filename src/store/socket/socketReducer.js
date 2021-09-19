@@ -1,11 +1,5 @@
 import * as actions from "../actionTypes";
 import { updateObject } from "../../shared/updateData";
-import {
-  SOCKET_ON_MESSAGE,
-  SOCKET_ON_MESSAGE_STATE,
-  SOCKET_SHOW_CHAT,
-} from "../actionTypes";
-import { v4 as uuid } from "uuid";
 const dateFormat = require("dateformat");
 
 /** @param {
@@ -59,22 +53,21 @@ const fetchError = (state, action) =>
 const updateInput = (state, { input, userTyping }) => {
   const friends = [...state.friends];
   friends[state.isActiveChat.index].inputMessage = input;
-  // friends[state.isActiveChat.index].userTyping = userTyping;
   return updateObject(state, { friends: friends });
 };
 
 const updateFriends = (state, { senderId, authUserId, message, timestamp }) => {
   const friends = [...state.friends];
-  friends.map((friend) => {
-    let found = false;
-    if (senderId === authUserId && senderId === friend.userId) found = true;
-    if (senderId !== authUserId && senderId === friend.id) found = true;
-    if (!found) return friend;
+  let index = -1;
+  if (senderId === authUserId) {
+    index = friends.findIndex((user) => senderId === user.userId);
+  } else {
+    index = friends.findIndex((user) => senderId === user.id);
+  }
 
-    friend.lastMessage = message;
-    friend.time = timestamp;
-    return friend;
-  });
+  if (index === -1) return state;
+  friends[index].lastMessage = message;
+  friends[index].time = timestamp;
 
   return updateObject(state, { friends: friends });
 };
@@ -87,7 +80,6 @@ const addMessage = (
     senderId,
     recipientId,
     timestamp,
-    message,
     encryptedMessage,
     messageState,
   }
@@ -96,7 +88,7 @@ const addMessage = (
     ...updateFriends(state, {
       senderId: senderId,
       authUserId: authUserId,
-      message: message,
+      message: encryptedMessage,
       timestamp: timestamp,
     }),
   };
@@ -128,7 +120,6 @@ const socketOnOnlineState = (state, { userId, onlineState, lastOnline }) => {
     friends.lastOnline = dateFormat(lastOnline, "isoDateTime");
     return friend;
   });
-  console.log("testtttttt");
   return updateObject(state, { friends: friends });
 };
 

@@ -70,6 +70,14 @@ const showActiveChat = (friendId) => ({
   friendId: friendId,
 });
 
+const emitOnlineState = (socket, uniqueId, userId, friendId) => (dispatch) => {
+  socket.emit(socketActions.onlineStatus, {
+    roomId: uniqueId,
+    userId: userId,
+    recipientId: friendId,
+  });
+};
+
 export const showChat =
   (socket, friendId, index, uniqueId) => (dispatch, getState) => {
     const authUserId = getState().auth.userId;
@@ -79,8 +87,10 @@ export const showChat =
 
     if (friendId || friendId !== "") {
       dispatch(emitConnectUser(socket, authUserId, friendId, uniqueId));
-      console.log("test", isActiveChat);
+      // console.log("test", isActiveChat);
       if (isActiveChat) dispatch(emitDisconnectUser(socket));
+      // console.log({ uniqueId, authUserId, friendId });
+      dispatch(emitOnlineState(socket, uniqueId, authUserId, friendId));
     }
 
     dispatch(showActiveChat(friendId));
@@ -93,7 +103,6 @@ const socketEmitMessage = (
   senderId,
   recipientId,
   timestamp,
-  message,
   encryptedMessage
 ) => ({
   type: actions.SOCKET_EMIT_MESSAGE,
@@ -102,7 +111,6 @@ const socketEmitMessage = (
   senderId: senderId,
   recipientId: recipientId,
   timestamp: timestamp,
-  message: message,
   encryptedMessage: encryptedMessage,
   messageStatus: -1,
 });
@@ -180,12 +188,24 @@ const socketOnMessageState = (
   msgState: msgState,
 });
 
+export const emitUserTypingState =
+  (socket, isTyping, roomId, senderId) => (dispatch) => {
+    dispatch(socketEmitTyping(isTyping));
+    socket.emit(socketActions.typingState, {
+      isTyping: isTyping,
+      roomId: roomId,
+      senderId: senderId,
+    });
+  };
+
 export const emitMessage =
   (socket, senderId, recipientId, roomId, message) => (dispatch, getState) => {
     const authUserId = getState().auth.userId;
     const temporaryMessageId = uuid();
     const timestamp = dateFormat(new Date(), "isoDateTime");
     const encryptedMessage = toEncrypt(message);
+
+    dispatch(emitUserTypingState(socket, false, roomId, senderId));
 
     dispatch(
       socketEmitMessage(
@@ -194,7 +214,6 @@ export const emitMessage =
         senderId,
         recipientId,
         timestamp,
-        message,
         encryptedMessage
       )
     );
@@ -210,25 +229,6 @@ export const emitMessage =
 
     dispatch(updateInput(""));
   };
-
-export const emitUserTypingState =
-  (socket, isTyping, roomId, senderId) => (dispatch) => {
-    dispatch(socketEmitTyping(isTyping));
-    socket.emit(socketActions.typingState, {
-      isTyping: isTyping,
-      roomId: roomId,
-      senderId: senderId,
-    });
-  };
-
-// export const emitMessageReceivedState =
-//   (socket, userId, recipientId) => (dispatch) => {
-//     dispatch(socketEmitReceived());
-//     socket.emit(socketActions.messageState, {
-//       userId: userId,
-//       recipientId: recipientId,
-//     });
-//   };
 
 export const emitMessageSeenState =
   (socket, messageId, senderId, recipientId) => (dispatch, getState) => {
@@ -304,8 +304,6 @@ export const onMessageState =
     const authUserId = getState().auth.userId;
     if (userId !== authUserId) return;
 
-    console.log("message state", msgState);
-
     dispatch(
       socketOnMessageState(
         authUserId,
@@ -323,11 +321,8 @@ export const messageInput = (socket, value) => (dispatch, getState) => {
   const friends = getState().socket.friends;
   const currTyping = friends[indexActiveChat].userTyping;
 
-  // let isTyping = null;
-
   // notify receiver that sender is not typing
   if (value.length < 1 && currTyping) {
-    // isTyping = false;
     dispatch(
       emitUserTypingState(
         socket,
@@ -340,7 +335,6 @@ export const messageInput = (socket, value) => (dispatch, getState) => {
 
   // notify receiver that sender is typing
   if (value.length > 0 && !currTyping) {
-    // isTyping = true;
     dispatch(
       emitUserTypingState(
         socket,
@@ -354,8 +348,9 @@ export const messageInput = (socket, value) => (dispatch, getState) => {
   dispatch(updateInput(value));
 };
 
-export const fetchData = (isAuth, data) => (dispatch) => {
+export const fetchData = (socket, isAuth, data) => (dispatch, getState) => {
   if (!isAuth) return dispatch(fetchError("ERROR: Please login."));
+  const authUserId = getState().auth.userId;
 
   dispatch(fetchStart());
 
@@ -370,6 +365,12 @@ export const fetchData = (isAuth, data) => (dispatch) => {
     .then((res) => res.json())
     .then((friends) => {
       if (!friends) return;
+      for (let friend of friends) {
+        // console.log(friend);
+        dispatch(
+          emitConnectUser(socket, authUserId, friend.id, friend.uniqueId)
+        );
+      }
       dispatch(fetchFriendsSuccess(friends));
       return fetch("/messages", config);
     })

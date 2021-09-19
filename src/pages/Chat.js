@@ -1,14 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import { connect } from "react-redux";
 import { useHistory } from "react-router";
 import * as actions from "../store/actions";
 import io from "socket.io-client";
 import * as socketIoActions from "../shared/socketIoActionTypes";
-import { toDecrypt, toEncrypt } from "../shared/aes";
-import { v4 as uuid } from "uuid";
 
 import HorizontalLine from "../components/UI/HorizontalLine/HorizontalLine";
-import useFetch from "../hooks/useFetchJson";
 import DivOverflowY from "../components/UI/DivOverflowY/DivOverflowY";
 import TextArea from "../components/UI/TextArea/TextArea";
 import IcoSendMessage from "../assets/ico/ico-send-message";
@@ -16,7 +13,7 @@ import ButtonIcon from "../components/UI/ButtonIcon/ButtonIcon";
 import ChatAvatar from "../components/Pages/Chat/ChatAvatar";
 import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
-import { showChat } from "../store/actions";
+import { toDecrypt } from "../shared/aes";
 
 const socket = io.connect("/");
 
@@ -45,80 +42,15 @@ function Chat({
   onMessageState,
 }) {
   useEffect(() => {
-    fetchData(isAuth, { userId: authUserId });
+    fetchData(socket, isAuth, { userId: authUserId });
   }, [fetchData]);
 
   const dateFormat = require("dateformat");
-  // const [fetchedFriends, setFetchedFriends] = useFetch(
-  //   "/friendList",
-  //   ["inputMessage", "userColor"],
-  //   isAuth,
-  //   { userId: authUserId }
-  // );
-  // const [fetchedUserMessages, setFetchedUserMessages] = useFetch(
-  //   "/messages",
-  //   null,
-  //   isAuth,
-  //   {
-  //     userId: authUserId,
-  //   }
-  // );
-
-  // const [isActiveChat, setIsActiveChat] = useState(null);
-  // const [indexOfActiveChat, setIndexOfActiveChat] = useState(null);
   const history = useHistory();
-
-  // const _isActiveChat = useRef(isActiveChat);
-  //
-  // useEffect(() => {
-  //   _isActiveChat.current = isActiveChat;
-  // }, [isActiveChat]);
-
-  // /** added */
-  // useEffect(() => {
-  //   if (!isActiveChat) {
-  //     const tempFriends = [...fetchedFriends];
-  //     for (let friend of tempFriends) {
-  //       friend["userColor"] = Math.floor(Math.random() * 5);
-  //     }
-  //   }
-  // }, [fetchedFriends, isActiveChat]);
 
   /** ADDED */
   const onInputMessageHandler = (value) => {
     messageInput(socket, value);
-    // const tempUsers = [...fetchedFriends];
-    // tempUsers[indexOfActiveChat].inputMessage = value;
-    //
-    // // Set typing status on the sender client side to prevent
-    // // posting "sending status" to the socket on each key press
-    // if (tempUsers[indexOfActiveChat].userTyping === undefined) {
-    //   tempUsers[indexOfActiveChat].userTyping = false;
-    // }
-    //
-    // // notify another user that current user is not typing
-    // if (value.length === 0 && tempUsers[indexOfActiveChat].userTyping) {
-    //   tempUsers[indexOfActiveChat].userTyping = false;
-    //   // emitUserTyping(
-    //   //   socket,
-    //   //   false,
-    //   //   tempUsers[indexOfActiveChat].uniqueId,
-    //   //   authUserId
-    //   // );
-    // }
-    //
-    // // notify another user that current user is typing
-    // if (value.length > 0 && !tempUsers[indexOfActiveChat].userTyping) {
-    //   tempUsers[indexOfActiveChat].userTyping = true;
-    //   // emitUserTyping(
-    //   //   socket,
-    //   //   true,
-    //   //   tempUsers[indexOfActiveChat].uniqueId,
-    //   //   authUserId
-    //   // );
-    // }
-    //
-    // setFetchedFriends(tempUsers);
   };
 
   const onSubmitMessageHandler = (
@@ -136,49 +68,6 @@ function Chat({
     if (!strippedMessage.length || !senderId || !recipientId) return;
 
     emitMessage(socket, senderId, recipientId, uniqueId, message);
-
-    // /** ADDED */
-    // const temporaryId = uuid();
-    // const timestamp = dateFormat(new Date(), "isoDateTime");
-    // const encryptedMessage = toEncrypt(message);
-    //
-    // /** ADDED */
-    // setFetchedUserMessages((prevState) => {
-    //   const currentMessages = { ...prevState };
-    //   currentMessages[recipientId] = [
-    //     {
-    //       id: temporaryId,
-    //       senderId: senderId,
-    //       recipientId: recipientId,
-    //       timestamp: timestamp,
-    //       message: encryptedMessage,
-    //       messageStatus: -1,
-    //     },
-    //     ...currentMessages[recipientId],
-    //   ];
-    //   return currentMessages;
-    // });
-    //
-    // /** ADDED */
-    // setFetchedFriends((prevState) => {
-    //   const _fetchedFriends = [...prevState];
-    //   let indexSender = -1;
-    //   if (senderId === authUserId) {
-    //     indexSender = _fetchedFriends.findIndex(
-    //       (user) => senderId === user.userId
-    //     );
-    //   } else {
-    //     indexSender = _fetchedFriends.findIndex((user) => senderId === user.id);
-    //   }
-    //
-    //   if (indexSender === -1) return [...prevState];
-    //   _fetchedFriends[indexSender].lastMessage = encryptedMessage;
-    //   _fetchedFriends[indexSender].time = timestamp;
-    //   return _fetchedFriends;
-    // });
-
-    // reset input form
-    // onInputMessageHandler("");
   };
 
   useEffect(() => {
@@ -187,16 +76,6 @@ function Chat({
       socketIoActions.onlineStatus,
       ({ recipientId, socketId, userId, online, lastOnline }) => {
         onOnlineStateChange(recipientId, userId, online, lastOnline);
-
-        // if (recipientId !== authUserId) return;
-        //
-        // setFetchedFriends((prevState) => {
-        //   const users = [...prevState];
-        //   const index = users.findIndex((user) => user.id === userId);
-        //   users[index].onlineState = online;
-        //   users[index].lastOnline = dateFormat(lastOnline, "isoDateTime");
-        //   return users;
-        // });
       }
     );
 
@@ -205,15 +84,6 @@ function Chat({
       socketIoActions.typingState,
       ({ recipientId, userId, typingState }) => {
         onTypingStateChange(recipientId, userId, typingState);
-
-        // if (recipientId !== authUserId) return;
-        //
-        // setFetchedFriends((prevState) => {
-        //   const users = [...prevState];
-        //   const index = users.findIndex((user) => user.id === userId);
-        //   users[index].typingState = typingState;
-        //   return users;
-        // });
       }
     );
 
@@ -223,61 +93,6 @@ function Chat({
       ({ id, senderId, recipientId, timestamp, message, messageStatus }) => {
         emitMsgSeen(socket, id, senderId, recipientId);
         onNewMessage(socket, id, senderId, recipientId, timestamp, message);
-
-        // setFetchedFriends((prevState) => {
-        //   const _fetchedFriends = [...prevState];
-        //   let indexSender = -1;
-        //   if (senderId === authUserId) {
-        //     indexSender = _fetchedFriends.findIndex(
-        //       (user) => senderId === user.userId
-        //     );
-        //   } else {
-        //     indexSender = _fetchedFriends.findIndex(
-        //       (user) => senderId === user.id
-        //     );
-        //   }
-        //
-        //   if (indexSender === -1) return [...prevState];
-        //   _fetchedFriends[indexSender].lastMessage = message;
-        //   _fetchedFriends[indexSender].time = timestamp;
-        //
-        //   // sort users with new messages to the top of the friend list
-        //   _fetchedFriends.sort((a, b) => new Date(b.time) - new Date(a.time));
-        //
-        //   // if chat is active, then need to keep track of the new index after the sort
-        //   // to ensure that it doesn't get closed
-        //   if (_isActiveChat.current) {
-        //     const newActiveUser = _fetchedFriends.findIndex(
-        //       (user) => user.id === _isActiveChat.current
-        //     );
-        //     setIndexOfActiveChat(newActiveUser);
-        //   }
-        //
-        //   return _fetchedFriends;
-        // });
-        //
-        // setFetchedUserMessages((prevState) => {
-        //   const currentMessages = { ...prevState };
-        //   let user = senderId === authUserId ? recipientId : senderId;
-        //   currentMessages[user] = [
-        //     {
-        //       id: id,
-        //       senderId: senderId,
-        //       recipientId: recipientId,
-        //       timestamp: timestamp,
-        //       message: message,
-        //       messageStatus: -1,
-        //     },
-        //     ...currentMessages[user],
-        //   ];
-        //   return currentMessages;
-        // });
-
-        // // if message is received by another client then
-        // // notify the server (only if another friend's chat
-        // // is active
-        // if (_isActiveChat.current === senderId) return;
-        // emitMsgReceived(socket, authUserId, senderId);
       }
     );
 
@@ -286,23 +101,6 @@ function Chat({
       socketIoActions.messageSent,
       ({ temporaryMessageId, newMessageId, userId, recipientId }) => {
         onMessageSent(temporaryMessageId, newMessageId, userId, recipientId);
-
-        // if (userId !== authUserId) return;
-        //
-        // setFetchedUserMessages((prevState) => {
-        //   const currentMessages = { ...prevState };
-        //   let _userId = userId === authUserId ? recipientId : userId;
-        //
-        //   const index = currentMessages[_userId].findIndex(
-        //     (message) => message.id === temporaryMessageId
-        //   );
-        //   if (index > -1) {
-        //     console.log("updating id and message status");
-        //     currentMessages[_userId][index].id = newMessageId;
-        //     currentMessages[_userId][index].messageStatus = 0;
-        //   }
-        //   return currentMessages;
-        // });
       }
     );
 
@@ -311,30 +109,6 @@ function Chat({
       socketIoActions.messageReceived,
       ({ messagesId, userId, recipientId }) => {
         onMessageState(messagesId, userId, recipientId, 1);
-        // if (userId !== authUserId) return;
-        //
-        // setFetchedUserMessages((prevState) => {
-        //   const currentMessages = { ...prevState };
-        //   let _userId = userId === authUserId ? recipientId : userId;
-        //
-        //   // console.log("userId", userId);
-        //   // console.log("authUserId", authUserId);
-        //   // console.log("recipientId", recipientId);
-        //   // console.log("messagesId", messagesId);
-        //
-        //   for (let messageId of messagesId) {
-        //     const index = currentMessages[_userId].findIndex(
-        //       (message) => message.id === messageId
-        //     );
-        //     // console.log("messageId");
-        //     // console.log("index", index);
-        //     if (index > -1) {
-        //       // console.log("received", messageId);
-        //       currentMessages[_userId][index].messageStatus = 1;
-        //     }
-        //   }
-        //   return currentMessages;
-        // });
       }
     );
 
@@ -343,20 +117,6 @@ function Chat({
       socketIoActions.messageSeen,
       ({ messagesId, userId, recipientId }) => {
         onMessageState(messagesId, userId, recipientId, 2);
-
-        // if (userId !== authUserId) return;
-        // setFetchedUserMessages((prevState) => {
-        //   const currentMessages = { ...prevState };
-        //   let _userId = userId === authUserId ? recipientId : userId;
-        //
-        //   for (let messageId of messagesId) {
-        //     const index = currentMessages[_userId].findIndex(
-        //       (message) => message.id === messageId
-        //     );
-        //     if (index > -1) currentMessages[_userId][index].messageStatus = 2;
-        //   }
-        //   return currentMessages;
-        // });
       }
     );
   }, [
@@ -368,34 +128,8 @@ function Chat({
     onTypingStateChange,
   ]);
 
-  // useEffect(() => {
-  //   // console.log(fetchedFriends);
-  // }, [fetchedFriends]);
-
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
-    // if no users fetched or user's chat is already active
-    // then avoid fetching / re-rendering again
-    console.log(isActiveChat);
-
     showChat(socket, recipientId, index, uniqueId);
-
-    // if (friends.length < 0 || isActiveChat === recipientId || !uniqueId) return;
-    //
-    // if (recipientId || recipientId !== "") {
-    //   emitConnectUser(socket, authUserId, recipientId, uniqueId);
-    //   if (isActiveChat) emitDisconnectUser(socket);
-    // }
-    //
-    // let _fetchedMessages = { ...messages };
-    // // let userMessages = [];
-    // if (!(recipientId in _fetchedMessages)) {
-    //   _fetchedMessages = { ...messages, [recipientId]: [] };
-    // }
-    //
-    // // setFetchedUserMessages(_fetchedMessages);
-    // setActiveChat(recipientId, index);
-    // // setIsActiveChat(recipientId);
-    // // setIndexOfActiveChat(index);
     history.push("/chat/" + recipientId);
   };
 
@@ -585,8 +319,8 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    fetchData: (isAuth, friends) =>
-      dispatch(actions.fetchData(isAuth, friends)),
+    fetchData: (socket, isAuth, friends) =>
+      dispatch(actions.fetchData(socket, isAuth, friends)),
     messageInput: (socket, value) =>
       dispatch(actions.messageInput(socket, value)),
     setActiveChat: (friendId, index) =>
