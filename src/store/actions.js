@@ -8,11 +8,7 @@ export {
 
 export {
   fetchData,
-  setActiveChat,
-  emitConnectUser,
-  emitDisconnectUser,
   emitMessage,
-  emitUserTypingState,
   emitMessageSeenState,
   onOnlineStateChange,
   onTypingStateChange,
