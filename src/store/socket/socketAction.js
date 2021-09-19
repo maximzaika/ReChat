@@ -35,7 +35,7 @@ const updateInput = (value) => ({
   input: value,
 });
 
-export const setActiveChat = (friendId, index) => ({
+const setActiveChat = (friendId, index) => ({
   type: actions.SOCKET_SET_ACTIVE_CHAT,
   friendId: friendId,
   index: index,
@@ -49,17 +49,16 @@ const socketDisconnected = () => ({
   type: actions.SOCKET_DISCONNECTED,
 });
 
-export const emitConnectUser =
-  (socket, userId, recipientId, roomId) => (dispatch) => {
-    dispatch(socketConnected());
-    socket.emit(socketActions.joinRoom, {
-      userId: userId,
-      recipientId: recipientId,
-      roomId: roomId,
-    });
-  };
+const emitConnectUser = (socket, userId, recipientId, roomId) => (dispatch) => {
+  dispatch(socketConnected());
+  socket.emit(socketActions.joinRoom, {
+    userId: userId,
+    recipientId: recipientId,
+    roomId: roomId,
+  });
+};
 
-export const emitDisconnectUser = (socket) => (dispatch) => {
+const emitDisconnectUser = (socket) => (dispatch) => {
   console.log("disconnected");
   dispatch(socketDisconnected());
   socket.emit(socketActions.disconnectRoom);
@@ -188,7 +187,7 @@ const socketOnMessageState = (
   msgState: msgState,
 });
 
-export const emitUserTypingState =
+const emitUserTypingState =
   (socket, isTyping, roomId, senderId) => (dispatch) => {
     dispatch(socketEmitTyping(isTyping));
     socket.emit(socketActions.typingState, {

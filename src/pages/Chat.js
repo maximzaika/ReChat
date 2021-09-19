@@ -1,9 +1,20 @@
 import React, { useEffect } from "react";
-import { connect } from "react-redux";
 import { useHistory } from "react-router";
-import * as actions from "../store/actions";
 import io from "socket.io-client";
 import * as socketIoActions from "../shared/socketIoActionTypes";
+
+import {
+  fetchData,
+  showChat,
+  messageInput,
+  emitMessage,
+  onOnlineStateChange,
+  onTypingStateChange,
+  emitMessageSeenState,
+  onNewMessage,
+  onMessageSent,
+  onMessageState,
+} from "../store/actions";
 
 import HorizontalLine from "../components/UI/HorizontalLine/HorizontalLine";
 import DivOverflowY from "../components/UI/DivOverflowY/DivOverflowY";
@@ -15,42 +26,30 @@ import ChatUserMessages from "../components/Pages/Chat/ChatUserMessages";
 import MyLink from "../components/UI/MyLink/MyLink";
 import { toDecrypt } from "../shared/aes";
 
+import { useSelector, useDispatch } from "react-redux";
+
 const socket = io.connect("/");
 
-function Chat({
-  isAuth,
-  authUserId,
-  authUserFName,
-  authUserSName,
-  fetchData,
-  messageInput,
-  showChat,
-  setActiveChat,
-  friends,
-  messages,
-  isActiveChat,
-  indexOfActiveChat,
-  emitConnectUser,
-  emitDisconnectUser,
-  emitMessage,
-  emitUserTyping,
-  emitMsgSeen,
-  onOnlineStateChange,
-  onTypingStateChange,
-  onNewMessage,
-  onMessageSent,
-  onMessageState,
-}) {
-  useEffect(() => {
-    fetchData(socket, isAuth, { userId: authUserId });
-  }, [fetchData]);
-
+function Chat({ ...props }) {
   const dateFormat = require("dateformat");
   const history = useHistory();
+  const dispatch = useDispatch();
+  const { userId: authUserId, firstName: authUserFName } = useSelector(
+    ({ auth }) => auth
+  );
+  const isAuth = useSelector(({ auth }) => auth.token !== null);
+  const { friends, messages } = useSelector(({ socket }) => socket);
+  const { friendId: isActiveChat, index: indexOfActiveChat } = useSelector(
+    ({ socket }) => socket.isActiveChat
+  );
+
+  useEffect(() => {
+    dispatch(fetchData(socket, isAuth, { userId: authUserId }));
+  }, [dispatch, isAuth, authUserId]);
 
   /** ADDED */
   const onInputMessageHandler = (value) => {
-    messageInput(socket, value);
+    dispatch(messageInput(socket, value));
   };
 
   const onSubmitMessageHandler = (
@@ -67,7 +66,7 @@ function Chat({
     const strippedMessage = message.split(" ").join("").split("\n").join("");
     if (!strippedMessage.length || !senderId || !recipientId) return;
 
-    emitMessage(socket, senderId, recipientId, uniqueId, message);
+    dispatch(emitMessage(socket, senderId, recipientId, uniqueId, message));
   };
 
   useEffect(() => {
@@ -75,7 +74,7 @@ function Chat({
     socket.on(
       socketIoActions.onlineStatus,
       ({ recipientId, socketId, userId, online, lastOnline }) => {
-        onOnlineStateChange(recipientId, userId, online, lastOnline);
+        dispatch(onOnlineStateChange(recipientId, userId, online, lastOnline));
       }
     );
 
@@ -83,7 +82,7 @@ function Chat({
     socket.on(
       socketIoActions.typingState,
       ({ recipientId, userId, typingState }) => {
-        onTypingStateChange(recipientId, userId, typingState);
+        dispatch(onTypingStateChange(recipientId, userId, typingState));
       }
     );
 
@@ -91,8 +90,10 @@ function Chat({
     socket.on(
       socketIoActions.message,
       ({ id, senderId, recipientId, timestamp, message, messageStatus }) => {
-        emitMsgSeen(socket, id, senderId, recipientId);
-        onNewMessage(socket, id, senderId, recipientId, timestamp, message);
+        dispatch(emitMessageSeenState(socket, id, senderId, recipientId));
+        dispatch(
+          onNewMessage(socket, id, senderId, recipientId, timestamp, message)
+        );
       }
     );
 
@@ -100,7 +101,9 @@ function Chat({
     socket.on(
       socketIoActions.messageSent,
       ({ temporaryMessageId, newMessageId, userId, recipientId }) => {
-        onMessageSent(temporaryMessageId, newMessageId, userId, recipientId);
+        dispatch(
+          onMessageSent(temporaryMessageId, newMessageId, userId, recipientId)
+        );
       }
     );
 
@@ -108,7 +111,7 @@ function Chat({
     socket.on(
       socketIoActions.messageReceived,
       ({ messagesId, userId, recipientId }) => {
-        onMessageState(messagesId, userId, recipientId, 1);
+        dispatch(onMessageState(messagesId, userId, recipientId, 1));
       }
     );
 
@@ -116,20 +119,13 @@ function Chat({
     socket.on(
       socketIoActions.messageSeen,
       ({ messagesId, userId, recipientId }) => {
-        onMessageState(messagesId, userId, recipientId, 2);
+        dispatch(onMessageState(messagesId, userId, recipientId, 2));
       }
     );
-  }, [
-    emitMsgSeen,
-    onMessageSent,
-    onMessageState,
-    onNewMessage,
-    onOnlineStateChange,
-    onTypingStateChange,
-  ]);
+  }, [dispatch]);
 
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
-    showChat(socket, recipientId, index, uniqueId);
+    dispatch(showChat(socket, recipientId, index, uniqueId));
     history.push("/chat/" + recipientId);
   };
 
@@ -304,97 +300,4 @@ function Chat({
   );
 }
 
-const mapStateToProps = (state) => {
-  return {
-    friends: state.socket.friends,
-    messages: state.socket.messages,
-    isActiveChat: state.socket.isActiveChat.friendId,
-    indexOfActiveChat: state.socket.isActiveChat.index,
-    isAuth: state.auth.token !== null,
-    authUserId: state.auth.userId !== null ? state.auth.userId : null,
-    authUserFName: state.auth.firstName !== null ? state.auth.firstName : null,
-    authUserSName: state.auth.surName !== null ? state.auth.surName : null,
-  };
-};
-
-const mapDispatchToProps = (dispatch) => {
-  return {
-    fetchData: (socket, isAuth, friends) =>
-      dispatch(actions.fetchData(socket, isAuth, friends)),
-    messageInput: (socket, value) =>
-      dispatch(actions.messageInput(socket, value)),
-    setActiveChat: (friendId, index) =>
-      dispatch(actions.setActiveChat(friendId, index)),
-    showChat: (socket, friendId, index, uniqueId) =>
-      dispatch(actions.showChat(socket, friendId, index, uniqueId)),
-    emitConnectUser: (socket, userId, recipientId, roomId) =>
-      dispatch(actions.emitConnectUser(socket, userId, recipientId, roomId)),
-    emitDisconnectUser: (socket) =>
-      dispatch(actions.emitDisconnectUser(socket)),
-    emitMessage: (
-      socket,
-      tempId,
-      senderId,
-      recipientId,
-      roomId,
-      timestamp,
-      message
-    ) =>
-      dispatch(
-        actions.emitMessage(
-          socket,
-          tempId,
-          senderId,
-          recipientId,
-          roomId,
-          timestamp,
-          message
-        )
-      ),
-    emitUserTyping: (socket, isTyping, roomId, senderId) =>
-      dispatch(actions.emitUserTypingState(socket, isTyping, roomId, senderId)),
-    emitMsgSeen: (socket, messageId, senderId, recipientId) =>
-      dispatch(
-        actions.emitMessageSeenState(socket, messageId, senderId, recipientId)
-      ),
-    onOnlineStateChange: (recipientId, userId, online, lastOnline) =>
-      dispatch(
-        actions.onOnlineStateChange(recipientId, userId, online, lastOnline)
-      ),
-    onTypingStateChange: (recipientId, userId, typingState) =>
-      dispatch(actions.onTypingStateChange(recipientId, userId, typingState)),
-    onNewMessage: (
-      socket,
-      messageId,
-      senderId,
-      recipientId,
-      timestamp,
-      message
-    ) =>
-      dispatch(
-        actions.onNewMessage(
-          socket,
-          messageId,
-          senderId,
-          recipientId,
-          timestamp,
-          message
-        )
-      ),
-    onMessageSent: (temporaryMessageId, newMessageId, userId, recipientId) =>
-      dispatch(
-        actions.onMessageSent(
-          temporaryMessageId,
-          newMessageId,
-          userId,
-          recipientId
-        )
-      ),
-    onMessageState: (messagesId, userId, recipientId, msgState) =>
-      dispatch(
-        actions.onMessageState(messagesId, userId, recipientId, msgState)
-      ),
-  };
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(Chat);
+export default Chat;
