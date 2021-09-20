@@ -34,10 +34,9 @@ function Chat({ ...props }) {
   const dateFormat = require("dateformat");
   const history = useHistory();
   const dispatch = useDispatch();
-  const { userId: authUserId, firstName: authUserFName } = useSelector(
-    ({ auth }) => auth
-  );
   const isAuth = useSelector(({ auth }) => auth.token !== null);
+  const authUserId = useSelector(({ auth }) => auth.userId);
+  const authUserFName = useSelector(({ auth }) => auth.firstName);
   const { friends, messages } = useSelector(({ socket }) => socket);
   const { friendId: isActiveChat, index: indexOfActiveChat } = useSelector(
     ({ socket }) => socket.isActiveChat
@@ -180,6 +179,7 @@ function Chat({ ...props }) {
                   lastMessage,
                   time,
                   userColor,
+                  unreadMessages,
                 } = friend;
 
                 return (
@@ -210,9 +210,12 @@ function Chat({ ...props }) {
                             {getTime(time)}
                           </span>
                         </div>
-                        <p className="my-0 truncate text-sm italic text-gray-400">
-                          {toDecrypt(lastMessage)}
-                        </p>
+                        <div className="flex justify-between">
+                          <p className="my-0 truncate text-sm italic text-gray-400">
+                            {toDecrypt(lastMessage)}
+                          </p>
+                          <span>{unreadMessages}</span>
+                        </div>
                       </div>
                     </div>
 

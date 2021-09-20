@@ -64,9 +64,10 @@ const emitDisconnectUser = (socket) => (dispatch) => {
   socket.emit(socketActions.disconnectRoom);
 };
 
-const showActiveChat = (friendId) => ({
+const showActiveChat = (friendId, index) => ({
   type: actions.SOCKET_SHOW_ACTIVE_CHAT,
   friendId: friendId,
+  index: index,
 });
 
 const emitOnlineState = (socket, uniqueId, userId, friendId) => (dispatch) => {
@@ -92,7 +93,7 @@ export const showChat =
       dispatch(emitOnlineState(socket, uniqueId, authUserId, friendId));
     }
 
-    dispatch(showActiveChat(friendId));
+    dispatch(showActiveChat(friendId, index));
     dispatch(setActiveChat(friendId, index));
   };
 

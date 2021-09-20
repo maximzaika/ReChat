@@ -12,6 +12,7 @@ let users = [
     "2021-08-27T13:10:20+0800",
     false,
     false,
+    0,
     "2021-08-27T13:10:20+0800",
     2
   ),
@@ -25,6 +26,7 @@ let users = [
     "2021-08-26T13:10:20+0800",
     false,
     false,
+    0,
     "2021-08-26T13:10:20+0800",
     3
   ),
@@ -38,6 +40,7 @@ let users = [
     "2021-08-25T13:10:20+0800",
     false,
     false,
+    0,
     "2021-08-25T13:10:20+0800",
     0
   ),
@@ -51,6 +54,7 @@ let users = [
     "2021-08-25T13:10:20+0800",
     false,
     false,
+    0,
     "2021-08-25T13:10:20+0800",
     0
   ),
@@ -64,6 +68,7 @@ let users = [
     "2021-08-25T13:10:20+0800",
     false,
     false,
+    0,
     "2021-08-25T13:10:20+0800",
     0
   ),
@@ -77,6 +82,7 @@ let users = [
     "2021-08-24T13:10:20+0800",
     false,
     false,
+    0,
     "2021-08-24T13:10:20+0800",
     1
   ),
@@ -110,7 +116,45 @@ const updateUsersLastMessage = (senderId, recipientId, encryptedMessage) => {
   });
 };
 
+/**
+ * Increments user's messages on receive.
+ * @param {string} recipientId Recipient's ID.
+ * @param {string} senderId Sender's ID.
+ * @return {boolean} true = PASS, false = FAIL
+ */
+const incrementUserMessageCounter = (recipientId, senderId) => {
+  const _users = [...users];
+  const index = _users.findIndex(
+    (user) => user.userId === recipientId && user.id === senderId
+  );
+  if (!index) return false;
+  _users[index].unreadMessages++;
+  users = _users;
+  return true;
+};
+
+/**
+ * Reduces user's messages when seen.
+ * @param {string} senderId Sender's unique ID.
+ * @param {string} recipientId Recipient's unique ID.
+ * @param {number} qty Number of messages seen.
+ * @return {boolean} true = PASS, false = FAIL
+ */
+const decrementUserMessageCounter = (senderId, recipientId, qty) => {
+  const _users = [...users];
+  const index = _users.findIndex(
+    (user) => user.userId === senderId && user.id === recipientId
+  );
+  if (!index && _users[index].unreadMessages === 0) return false;
+  console.log(qty);
+  _users[index].unreadMessages -= qty;
+  users = _users;
+  return true;
+};
+
 module.exports = {
   findFriendsHandler,
   updateUsersLastMessage,
+  incrementUserMessageCounter,
+  decrementUserMessageCounter,
 };

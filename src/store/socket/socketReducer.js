@@ -69,6 +69,10 @@ const updateFriends = (state, { senderId, authUserId, message, timestamp }) => {
   friends[index].lastMessage = message;
   friends[index].time = timestamp;
 
+  if (senderId !== authUserId) {
+    friends[index].unreadMessages++;
+  }
+
   return updateObject(state, { friends: friends });
 };
 
@@ -117,7 +121,7 @@ const socketOnOnlineState = (state, { userId, onlineState, lastOnline }) => {
   friends.map((friend) => {
     if (friend.id !== userId) return friend;
     friend.onlineState = onlineState;
-    friends.lastOnline = dateFormat(lastOnline, "isoDateTime");
+    friend.lastOnline = dateFormat(lastOnline, "isoDateTime");
     return friend;
   });
   return updateObject(state, { friends: friends });
@@ -150,9 +154,14 @@ const setActiveChat = (state, { friendId, index }) => {
   // });
 };
 
-const showChat = (state, { friendId }) => {
-  if (friendId in state.messages) return state;
+const showChat = (state, { friendId, index }) => {
+  const friends = [...state.friends];
+  if (friends[index].unreadMessages !== 0) friends[index].unreadMessages = 0;
+  if (friendId in state.messages)
+    return updateObject(state, { friends: friends });
+
   return updateObject(state, {
+    friends: friends,
     messages: { ...state.messages, [friendId]: [] },
   });
 };
@@ -235,11 +244,6 @@ const socketOnMessageState = (
 ) => {
   const messages = { ...state.messages };
   const friendId = userId === authUserId ? recipientId : userId;
-
-  // console.log("userId", userId);
-  // console.log("authUserId", authUserId);
-  // console.log("recipientId", recipientId);
-  // console.log("state", { ...state.messages });
 
   for (let messageId of messagesId) {
     const index = messages[friendId].findIndex(

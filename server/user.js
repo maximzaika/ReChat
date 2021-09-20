@@ -8,6 +8,7 @@ function User(
   time,
   onlineState,
   typingState,
+  unreadMessages,
   lastOnline,
   userColor
 ) {
@@ -20,6 +21,7 @@ function User(
   this.time = time;
   this.onlineState = onlineState;
   this.typingState = typingState;
+  this.unreadMessages = unreadMessages;
   this.lastOnline = lastOnline;
   this.userColor = userColor;
 }

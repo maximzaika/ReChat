@@ -15,7 +15,12 @@ const {
   disconnectUserHandler,
 } = require("./connectedUsers");
 const actions = require("./socketIoActionTypes");
-const { findFriendsHandler, updateUsersLastMessage } = require("./users");
+const {
+  findFriendsHandler,
+  updateUsersLastMessage,
+  incrementUserMessageCounter,
+  decrementUserMessageCounter,
+} = require("./users");
 const {
   getUserMessagesHandler,
   findPendingMessagesHandler,
@@ -150,6 +155,8 @@ io.on(actions.connection, (socket) => {
     // find all the messages that have status of 1 = received
     const pendingMessages = findPendingMessagesHandler(userId, 1);
     if (pendingMessages.length) {
+      decrementUserMessageCounter(userId, recipientId, pendingMessages.length);
+
       for (let pendingSenders of pendingMessages) {
         // logically senders become recipients because we need to notify them that
         // the message has been received
@@ -192,6 +199,7 @@ io.on(actions.connection, (socket) => {
 
       // Update's friend's last message and the time of the last message.
       updateUsersLastMessage(senderId, recipientId, message);
+      incrementUserMessageCounter(recipientId, senderId);
 
       // Sends a message to all the users in this room
       socket.broadcast.to(roomId).emit(actions.message, messageSent);
