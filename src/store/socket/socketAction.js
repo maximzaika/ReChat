@@ -242,6 +242,26 @@ export const emitMessageSeenState =
     });
   };
 
+export const emitMessageDelete =
+  (socket, messageId) => (dispatch, getState) => {
+    const activeChatId = getState().socket.isActiveChat.index;
+    const selectedChat = getState().socket.friends[activeChatId];
+    socket.emit(socketActions.messageDelete, {
+      messageId: messageId,
+      message: toEncrypt("This message was deleted."),
+      roomId: selectedChat.uniqueId,
+    });
+  };
+
+export const onMessageDelete =
+  (isDeleted, messageId, message) => (dispatch) => {
+    if (!isDeleted) {
+      alert("ERROR: Message couldn't be deleted.");
+    }
+    console.log("deleted > ", isDeleted);
+    console.log("delete this message", messageId);
+  };
+
 export const onOnlineStateChange =
   (recipientId, userId, online, lastOnline) => (dispatch, getState) => {
     const authUserId = getState().auth.userId;

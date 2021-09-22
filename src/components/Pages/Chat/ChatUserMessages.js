@@ -1,14 +1,20 @@
-import React, { Fragment } from "react";
+import React, { Fragment, useEffect } from "react";
 import DivOverflowY from "../../UI/DivOverflowY/DivOverflowY";
-import { toDecrypt } from "../../../shared/aes";
+import { toEncrypt, toDecrypt } from "../../../shared/aes";
 import LoadingIndicator from "../../UI/LoadingIndicator/LoadingIndicator";
+import { useDispatch } from "react-redux";
+
+import { emitMessageDelete } from "../../../store/actions";
 
 export default function ChatUserMessages({
   isActiveChat,
   messages,
   authUserId,
   setMessages,
+  socket,
 }) {
+  const dispatch = useDispatch();
+
   const onHoverShowTime = (event, index) => {
     const eventType = event._reactName;
     const tempMessage = [...messages];
@@ -20,6 +26,12 @@ export default function ChatUserMessages({
     }
 
     // setMessages(tempMessage);
+  };
+
+  const onClickDelete = (index, messageId) => {
+    console.log("delete", index);
+    console.log("messageId", messageId);
+    dispatch(emitMessageDelete(socket, messageId));
   };
 
   return (
@@ -71,9 +83,14 @@ export default function ChatUserMessages({
                   onMouseLeave={(event) => onHoverShowTime(event, index)}
                 >
                   {incomingMessage.map((m, i) => (
-                    <p key={i} className="m-0">
-                      {m.split(" ").join("") === "" ? "\u00a0\u00a0" : m}
-                    </p>
+                    <div key={i} className="flex space-x-2">
+                      <p className="m-0">
+                        {m.split(" ").join("") === "" ? "\u00a0\u00a0" : m}
+                      </p>
+                      <span onClick={() => onClickDelete(index, message.id)}>
+                        DEL
+                      </span>
+                    </div>
                   ))}
                 </span>
                 {message.showTime && (

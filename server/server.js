@@ -27,6 +27,7 @@ const {
   storeMessageHandler,
   updateMessagesStatusHandler,
   updateMessageStatusHandler,
+  deleteMessageHandler,
 } = require("./messages");
 
 const port = process.env.PORT || 8000;
@@ -251,6 +252,28 @@ io.on(actions.connection, (socket) => {
       );
   });
 
+  socket.on(actions.messageDelete, ({ messageId, message, roomId }) => {
+    /* let every user in the same room know that the message with
+    messageId needs to be removed - including sender. */
+    const isDeleted = deleteMessageHandler(messageId, message);
+
+    if (!isDeleted) {
+      // if message isn't removed, then let the sender know
+      socket.emit(actions.messageDelete, {
+        isDeleted,
+        messageId: "",
+        message: "",
+      });
+    } else {
+      // if message is removed, then let everyone know
+      io.in(roomId).emit(actions.messageDelete, {
+        isDeleted,
+        messageId,
+        message,
+      });
+    }
+  });
+
   // boolean
   socket.on(actions.typingState, ({ isTyping, senderId, roomId }) => {
     const user = findUniqueConnectedUserHandler(socket.id, senderId, roomId);
@@ -266,7 +289,6 @@ io.on(actions.connection, (socket) => {
 
   socket.on(actions.disconnectRoom, () => {
     const user = disconnectUserHandler(socket.id);
-    console.log("disconnected user", user);
     if (!user) return;
 
     log(

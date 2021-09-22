@@ -3,7 +3,7 @@ const { v4: uuid } = require("uuid");
 
 let messages = [
   new Message(
-    1,
+    "1",
     "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
     "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
     1623753231285,
@@ -11,7 +11,7 @@ let messages = [
     2
   ),
   new Message(
-    2,
+    "2",
     "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
     "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
     1623753310611,
@@ -19,7 +19,7 @@ let messages = [
     2
   ),
   new Message(
-    3,
+    "3",
     "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
     "oymVbduXBQWWUeyPAeQDPYpzaih2",
     1623753310611,
@@ -27,7 +27,7 @@ let messages = [
     2
   ),
   new Message(
-    4,
+    "4",
     "oymVbduXBQWWUeyPAeQDPYpzaih2",
     "wAeLWFdtWgcFQF4tPvMeEcPp4nJ2",
     1623753310611,
@@ -35,7 +35,7 @@ let messages = [
     2
   ),
   new Message(
-    5,
+    "5",
     1,
     "394yzk6ckRcRXwrbF6UQGbdelb04",
     1623753310611,
@@ -43,7 +43,7 @@ let messages = [
     2
   ),
   new Message(
-    6,
+    "6",
     2,
     "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
     1623753310611,
@@ -51,7 +51,7 @@ let messages = [
     2
   ),
   new Message(
-    7,
+    "7",
     "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
     2,
     1623753310611,
@@ -59,7 +59,7 @@ let messages = [
     2
   ),
   new Message(
-    8,
+    "8",
     "D3M9bfjj9mSRfNR7gWKB2U7v4Ei1",
     2,
     1623753310611,
@@ -73,9 +73,9 @@ let messages = [
  * @param {string} id Unique message id
  * @param {string} senderId Unique id of the sender.
  * @param {string} recipientId Unique id of the recipient user (similar to senderId).
- * @param {Date} timestamp Date & Time when the message was sent.
+ * @param {Date | number} timestamp Date & Time when the message was sent.
  * @param {string} encryptedMessage User's message in the encrypted format
- * @param {number} messageStatus 0 = sent, 1 = received, 2 = receive + seen
+ * @param {number} messageStatus 0 = sent, 1 = received, 2 = receive + seen, 3 = deleted
  */
 function Message(
   id,
@@ -245,7 +245,8 @@ const updateMessageStatusHandler = (messageId, userId, recipientId, status) => {
  */
 const updateMessagesStatusHandler = (userId, recipientId, status) => {
   const messageIds = [];
-  for (let message of messages) {
+  const _messages = [...messages];
+  for (let message of _messages) {
     if (
       message.senderId === userId &&
       message.recipientId === recipientId &&
@@ -255,13 +256,26 @@ const updateMessagesStatusHandler = (userId, recipientId, status) => {
       messageIds.push(message.id);
     }
   }
+  messages = _messages;
   return messageIds;
+};
+
+const deleteMessageHandler = (messageId, message) => {
+  const _messages = [...messages];
+  const index = _messages.findIndex((message) => message.id === messageId);
+  if (index === -1) return false;
+  if (_messages[index].messageStatus === 3) return false;
+  _messages[index].encryptedMessage = message;
+  _messages[index].messageStatus = 3;
+  messages = _messages;
+  return true;
 };
 
 module.exports = {
   getUserMessagesHandler,
   findPendingMessagesHandler,
   storeMessageHandler,
+  deleteMessageHandler,
   updateMessagesStatusHandler,
   updateMessageStatusHandler,
 };

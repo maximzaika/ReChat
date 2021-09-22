@@ -12,4 +12,5 @@ module.exports = Object.freeze({
   messageSent: "messageSent",
   messageReceived: "messageReceived",
   messageSeen: "messageSeen",
+  messageDelete: "messageDelete",
 });
