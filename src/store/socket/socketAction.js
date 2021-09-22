@@ -3,6 +3,7 @@ import * as socketActions from "../../shared/socketIoActionTypes";
 import dateFormat from "dateformat";
 import { v4 as uuid } from "uuid";
 import { toEncrypt } from "../../shared/aes";
+import { SOCKET_EMIT_MESSAGE_DELETE } from "../actionTypes";
 
 const fetchFriendsSuccess = (friendsData) => {
   const tempFriends = [...friendsData];
@@ -188,6 +189,16 @@ const socketOnMessageState = (
   msgState: msgState,
 });
 
+const socketEmitMessageDelete = () => ({
+  type: actions.SOCKET_EMIT_MESSAGE_DELETE,
+});
+
+const socketOnMessageDelete = (messageId, message) => ({
+  type: actions.SOCKET_ON_MESSAGE_DELETE,
+  messageId,
+  message,
+});
+
 const emitUserTypingState =
   (socket, isTyping, roomId, senderId) => (dispatch) => {
     dispatch(socketEmitTyping(isTyping));
@@ -246,20 +257,18 @@ export const emitMessageDelete =
   (socket, messageId) => (dispatch, getState) => {
     const activeChatId = getState().socket.isActiveChat.index;
     const selectedChat = getState().socket.friends[activeChatId];
+    dispatch(socketEmitMessageDelete());
     socket.emit(socketActions.messageDelete, {
       messageId: messageId,
-      message: toEncrypt("This message was deleted."),
       roomId: selectedChat.uniqueId,
     });
   };
 
 export const onMessageDelete =
   (isDeleted, messageId, message) => (dispatch) => {
-    if (!isDeleted) {
-      alert("ERROR: Message couldn't be deleted.");
-    }
-    console.log("deleted > ", isDeleted);
-    console.log("delete this message", messageId);
+    if (!isDeleted) return alert("ERROR: Message couldn't be deleted.");
+
+    dispatch(socketOnMessageDelete(messageId, message));
   };
 
 export const onOnlineStateChange =

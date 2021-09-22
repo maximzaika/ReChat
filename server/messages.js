@@ -260,12 +260,12 @@ const updateMessagesStatusHandler = (userId, recipientId, status) => {
   return messageIds;
 };
 
-const deleteMessageHandler = (messageId, message) => {
+const deleteMessageHandler = (messageId, newMessage) => {
   const _messages = [...messages];
   const index = _messages.findIndex((message) => message.id === messageId);
   if (index === -1) return false;
   if (_messages[index].messageStatus === 3) return false;
-  _messages[index].encryptedMessage = message;
+  _messages[index].encryptedMessage = newMessage;
   _messages[index].messageStatus = 3;
   messages = _messages;
   return true;

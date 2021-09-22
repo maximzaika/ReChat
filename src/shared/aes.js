@@ -6,6 +6,6 @@ export const toEncrypt = (string) => {
 };
 
 export const toDecrypt = (cipher) => {
-  // if (cipher.startWith("Welcome")) return cipher;
+  if (cipher === "This message was deleted.") return cipher;
   return aes256.decrypt(secretKey, cipher);
 };

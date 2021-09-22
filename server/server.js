@@ -252,10 +252,11 @@ io.on(actions.connection, (socket) => {
       );
   });
 
-  socket.on(actions.messageDelete, ({ messageId, message, roomId }) => {
+  socket.on(actions.messageDelete, ({ messageId, roomId }) => {
     /* let every user in the same room know that the message with
     messageId needs to be removed - including sender. */
-    const isDeleted = deleteMessageHandler(messageId, message);
+    const newMessage = "This message was deleted.";
+    const isDeleted = deleteMessageHandler(messageId, newMessage);
 
     if (!isDeleted) {
       // if message isn't removed, then let the sender know
@@ -269,7 +270,7 @@ io.on(actions.connection, (socket) => {
       io.in(roomId).emit(actions.messageDelete, {
         isDeleted,
         messageId,
-        message,
+        message: newMessage,
       });
     }
   });

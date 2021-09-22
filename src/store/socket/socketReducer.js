@@ -255,6 +255,14 @@ const socketOnMessageState = (
   return updateObject(state, { messages: messages });
 };
 
+const socketOnMessageDelete = (state, { messageId, message }) => {
+  const messages = { ...state.messages };
+  console.log("I STOPPED HERE socketReducer at 260");
+  // const index = messages.findIndex((message) => message.id === messageId);
+  // messages[index] = message;
+  // return updateObject(state, { messages: messages });
+};
+
 const socketReducer = (state = initialState, action) => {
   switch (action.type) {
     case actions.SOCKET_FETCH_START:
@@ -277,6 +285,8 @@ const socketReducer = (state = initialState, action) => {
       return state;
     case actions.SOCKET_EMIT_MESSAGE:
       return addMessage(state, action);
+    case actions.SOCKET_EMIT_MESSAGE_DELETE:
+      return state;
     case actions.SOCKET_EMIT_TYPING:
       return socketEmitTyping(state, action);
     case actions.SOCKET_EMIT_RECEIVED:
@@ -289,6 +299,8 @@ const socketReducer = (state = initialState, action) => {
       return socketOnTypingState(state, action);
     case actions.SOCKET_ON_MESSAGE:
       return socketOnNewMessage(state, action);
+    case actions.SOCKET_ON_MESSAGE_DELETE:
+      return socketOnMessageDelete(state, action);
     case actions.SOCKET_ON_MESSAGE_SENT:
       return socketOnMessageSent(state, action);
     case actions.SOCKET_ON_MESSAGE_STATE:
