@@ -152,9 +152,35 @@ const decrementUserMessageCounter = (senderId, recipientId, qty) => {
   return true;
 };
 
+/**
+ * Reduces user's messages when seen.
+ * @param {string} friendId Id of the friend that requires status update.
+ * @param {string} userId Id of the friend of a friend.
+ * @param {Date} date Timestamp.
+ * @param {boolean} onlineStatus true = User is online, false = User is offline.
+ * @return {boolean} true = user is found & updated, false = user is not found & !updated
+ */
+const updateUsersOnlineStatus = (friendId, userId, date, onlineStatus) => {
+  const _users = [...users];
+  const index = _users.findIndex(
+    (user) => user.id === friendId && user.userId === userId
+  );
+
+  // if user doesn't exist then do not proceed
+  if (index === -1) return false;
+
+  // if user's online status is False then this is the time of last seen
+  if (!onlineStatus) _users[index].lastOnline = date;
+  _users[index].onlineState = onlineStatus;
+  users = _users;
+
+  return true;
+};
+
 module.exports = {
   findFriendsHandler,
   updateUsersLastMessage,
   incrementUserMessageCounter,
   decrementUserMessageCounter,
+  updateUsersOnlineStatus,
 };

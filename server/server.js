@@ -12,6 +12,7 @@ const {
   findConnectedUserHandler,
   findUniqueConnectedUserHandler,
   checkMessageReceivedHandler,
+  disconnectFromRoomHandler,
   disconnectUserHandler,
 } = require("./connectedUsers");
 const actions = require("./socketIoActionTypes");
@@ -20,6 +21,7 @@ const {
   updateUsersLastMessage,
   incrementUserMessageCounter,
   decrementUserMessageCounter,
+  updateUsersOnlineStatus,
 } = require("./users");
 const {
   getUserMessagesHandler,
@@ -146,6 +148,17 @@ io.on(actions.connection, (socket) => {
   // If user has opened the chat, it would let everyone know about their online state
   socket.on(actions.onlineStatus, ({ roomId, userId, recipientId }) => {
     const date = new Date();
+    log(
+      `[onlineStatus] (connectRoom) ${userId} opened ${recipientId} chat`,
+      "cyan"
+    );
+    const isUpdatedStatus = updateUsersOnlineStatus(
+      userId,
+      recipientId,
+      date,
+      false
+    );
+    if (!isUpdatedStatus) return;
     socket.broadcast
       .to(roomId)
       .emit(
@@ -167,7 +180,7 @@ io.on(actions.connection, (socket) => {
 
         if (senderId) {
           log(
-            `[connection (joinRoom -> messageSeen)] ${senderId.recipientId} from ${senderId.userId}`
+            `[onlineStatus (messageSeen)] ${senderId.recipientId} from ${senderId.userId}`
           );
 
           socket.broadcast
@@ -302,41 +315,64 @@ io.on(actions.connection, (socket) => {
     });
   });
 
-  socket.on(actions.disconnectRoom, () => {
-    const user = disconnectUserHandler(socket.id);
-    if (!user) return;
-
-    log(
-      `[onlineStatus] (disconnectRoom) ${user.userId} closed chat ${user.recipientId}`
+  socket.on(actions.disconnectRoom, ({ senderId, recipientId }) => {
+    const date = new Date();
+    const disconnectedUser = disconnectFromRoomHandler(
+      socket.id,
+      senderId,
+      recipientId
     );
-    io.to(user.roomId).emit(
+    if (!disconnectedUser) return;
+    log(
+      `[onlineStatus] (disconnectRoom) ${disconnectedUser.userId} closed ${disconnectedUser.recipientId}'s chat`,
+      "yellow"
+    );
+    const isUpdatedStatus = updateUsersOnlineStatus(
+      disconnectedUser.userId,
+      disconnectedUser.recipientId,
+      date,
+      false
+    );
+    if (!isUpdatedStatus) return;
+    io.to(disconnectedUser.roomId).emit(
       actions.onlineStatus,
       new UserOnlineState(
-        user.socketId,
-        user.userId,
-        user.recipientId,
-        new Date(),
+        disconnectedUser.socketId,
+        disconnectedUser.userId,
+        disconnectedUser.recipientId,
+        date,
         false
       )
     );
   });
 
   socket.on(actions.disconnect, () => {
-    const user = disconnectUserHandler(socket.id);
-    if (!user) return;
+    const date = new Date();
+    const disconnectedUsers = disconnectUserHandler(socket.id);
+    if (!disconnectedUsers) return;
 
-    log(
-      `[onlineStatus (disconnect)] ${user.userId} disconnected from ${user.recipientId}`
-    );
-    io.to(user.roomId).emit(
-      actions.onlineStatus,
-      new UserOnlineState(
-        user.socketId,
-        user.userId,
-        user.recipientId,
-        new Date(),
+    for (let disconnectedUser of disconnectedUsers) {
+      log(
+        `[onlineStatus] (disconnect) ${disconnectedUser.userId} disconnected from ${disconnectedUser.recipientId}`,
+        "red"
+      );
+      const isUpdatedStatus = updateUsersOnlineStatus(
+        disconnectedUser.userId,
+        disconnectedUser.recipientId,
+        date,
         false
-      )
-    );
+      );
+      if (!isUpdatedStatus) return;
+      io.to(disconnectedUser.roomId).emit(
+        actions.onlineStatus,
+        new UserOnlineState(
+          disconnectedUser.socketId,
+          disconnectedUser.userId,
+          disconnectedUser.recipientId,
+          date,
+          false
+        )
+      );
+    }
   });
 });
