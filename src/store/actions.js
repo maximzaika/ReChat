@@ -9,12 +9,14 @@ export {
 export {
   fetchData,
   emitMessage,
+  emitMessageDelete,
   emitMessageSeenState,
   onOnlineStateChange,
   onTypingStateChange,
   onNewMessage,
   onMessageSent,
   onMessageState,
+  onMessageDelete,
   messageInput,
   showChat,
 } from "./socket/socketAction";

@@ -29,29 +29,36 @@ const authSuccess = (token, userId, expiresIn, firstName, surName) => {
 
 const authFail = (errorType) => {
   let errorMessage = "";
-  switch (errorType) {
-    case "EMAIL_EXISTS":
-      errorMessage =
-        "Email already exists, try another email or login instead.";
-      break;
-    case "OPERATION_NOT_ALLOWED":
-      errorMessage = "Authentication is currently disabled. Try again later.";
-      break;
-    case "EMAIL_NOT_FOUND":
-      errorMessage =
-        "Email doesn't exist. Try another email or create a new account.";
-      break;
-    case "INVALID_EMAIL":
-      errorMessage = "Invalid email. Ensure it is accurate and not empty.";
-      break;
-    case "INVALID_PASSWORD":
-      errorMessage = "Invalid password. Ensure it is accurate and not empty.";
-      break;
-    case "Failed to fetch":
-      errorMessage = "Unable to fetch data. No connection to database.";
-      break;
-    default:
-      errorMessage = "You have attempting too many times. Try again later.";
+
+  if (errorType.includes("Unexpected token")) {
+    errorMessage =
+      "Internal server error. Try again or contact your administrator.";
+  } else {
+    switch (errorType) {
+      case "EMAIL_EXISTS":
+        errorMessage =
+          "Email already exists, try another email or login instead.";
+        break;
+      case "OPERATION_NOT_ALLOWED":
+        errorMessage = "Authentication is currently disabled. Try again later.";
+        break;
+      case "EMAIL_NOT_FOUND":
+        errorMessage =
+          "Email doesn't exist. Try another email or create a new account.";
+        break;
+      case "INVALID_EMAIL":
+        errorMessage = "Invalid email. Ensure it is accurate and not empty.";
+        break;
+      case "INVALID_PASSWORD":
+        errorMessage = "Invalid password. Ensure it is accurate and not empty.";
+        break;
+      case "Failed to fetch":
+        errorMessage =
+          "Internal server error: unable to fetch data. No connection to database. Try again or contact your administrator.";
+        break;
+      default:
+        errorMessage = "You have attempted too many times. Try again later.";
+    }
   }
 
   return {

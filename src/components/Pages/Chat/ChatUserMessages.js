@@ -1,14 +1,20 @@
-import React, { Fragment } from "react";
+import React, { Fragment, useEffect } from "react";
 import DivOverflowY from "../../UI/DivOverflowY/DivOverflowY";
-import { toDecrypt } from "../../../shared/aes";
+import { toEncrypt, toDecrypt } from "../../../shared/aes";
 import LoadingIndicator from "../../UI/LoadingIndicator/LoadingIndicator";
+import { useDispatch } from "react-redux";
+
+import { emitMessageDelete } from "../../../store/actions";
 
 export default function ChatUserMessages({
   isActiveChat,
   messages,
   authUserId,
   setMessages,
+  socket,
 }) {
+  const dispatch = useDispatch();
+
   const onHoverShowTime = (event, index) => {
     const eventType = event._reactName;
     const tempMessage = [...messages];
@@ -32,6 +38,8 @@ export default function ChatUserMessages({
             const minutes = date.getMinutes();
             const time = `${hours}:${minutes}`;
             const incomingMessage = toDecrypt(message.message).split("\n");
+            const deleteTimeframe =
+              (new Date().getTime() - date.getTime()) / 3600000;
 
             // Sent messages are always on the right
             // while received messages are always on the left
@@ -71,9 +79,28 @@ export default function ChatUserMessages({
                   onMouseLeave={(event) => onHoverShowTime(event, index)}
                 >
                   {incomingMessage.map((m, i) => (
-                    <p key={i} className="m-0">
-                      {m.split(" ").join("") === "" ? "\u00a0\u00a0" : m}
-                    </p>
+                    <div key={i} className="flex space-x-2">
+                      <p className="m-0">
+                        {m.split(" ").join("") === "" ? "\u00a0\u00a0" : m}
+                      </p>
+                      {authUserId === message.senderId &&
+                        message.messageStatus !== 3 &&
+                        deleteTimeframe <= 1 && (
+                          <span
+                            onClick={() =>
+                              dispatch(
+                                emitMessageDelete(
+                                  socket,
+                                  message.id,
+                                  message.timestamp
+                                )
+                              )
+                            }
+                          >
+                            DEL
+                          </span>
+                        )}
+                    </div>
                   ))}
                 </span>
                 {message.showTime && (

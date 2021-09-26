@@ -3,6 +3,7 @@ import * as socketActions from "../../shared/socketIoActionTypes";
 import dateFormat from "dateformat";
 import { v4 as uuid } from "uuid";
 import { toEncrypt } from "../../shared/aes";
+import { SOCKET_EMIT_MESSAGE_DELETE } from "../actionTypes";
 
 const fetchFriendsSuccess = (friendsData) => {
   const tempFriends = [...friendsData];
@@ -188,6 +189,17 @@ const socketOnMessageState = (
   msgState: msgState,
 });
 
+const socketEmitMessageDelete = () => ({
+  type: actions.SOCKET_EMIT_MESSAGE_DELETE,
+});
+
+const socketOnMessageDelete = (messageId, message, friendId) => ({
+  type: actions.SOCKET_ON_MESSAGE_DELETE,
+  messageId,
+  message,
+  friendId,
+});
+
 const emitUserTypingState =
   (socket, isTyping, roomId, senderId) => (dispatch) => {
     dispatch(socketEmitTyping(isTyping));
@@ -240,6 +252,36 @@ export const emitMessageSeenState =
       userId: senderId,
       recipientId: recipientId,
     });
+  };
+
+export const emitMessageDelete =
+  (socket, messageId, messageTimestamp) => (dispatch, getState) => {
+    const _messageTimestamp = new Date(messageTimestamp);
+    const allowedDeletion =
+      (new Date().getTime() - _messageTimestamp.getTime()) / 3600000;
+
+    if (allowedDeletion > 1)
+      return alert(
+        "ERROR: Messages sent more than an hour ago cannot be deleted!"
+      );
+
+    const activeChatIndex = getState().socket.isActiveChat.index;
+    const selectedChat = getState().socket.friends[activeChatIndex];
+    const authUserId = getState().auth.userId;
+    dispatch(socketEmitMessageDelete());
+    socket.emit(socketActions.messageDelete, {
+      messageId: messageId,
+      roomId: selectedChat.uniqueId,
+      senderId: authUserId,
+      recipientId: selectedChat.id,
+    });
+  };
+
+export const onMessageDelete =
+  (isDeleted, messageId, message, friendId) => (dispatch) => {
+    if (!isDeleted || !friendId || !messageId)
+      return alert("ERROR: Message couldn't be deleted!");
+    dispatch(socketOnMessageDelete(messageId, message, friendId));
   };
 
 export const onOnlineStateChange =

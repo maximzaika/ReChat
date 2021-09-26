@@ -9,3 +9,4 @@ export const messageState = "messageState";
 export const messageSent = "messageSent";
 export const messageReceived = "messageReceived";
 export const messageSeen = "messageSeen";
+export const messageDelete = "messageDelete";

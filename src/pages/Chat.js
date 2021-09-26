@@ -14,6 +14,7 @@ import {
   onNewMessage,
   onMessageSent,
   onMessageState,
+  onMessageDelete,
 } from "../store/actions";
 
 import HorizontalLine from "../components/UI/HorizontalLine/HorizontalLine";
@@ -121,6 +122,13 @@ function Chat({ ...props }) {
         dispatch(onMessageState(messagesId, userId, recipientId, 2));
       }
     );
+
+    socket.on(
+      socketIoActions.messageDelete,
+      ({ isDeleted, messageId, message, friendId }) => {
+        dispatch(onMessageDelete(isDeleted, messageId, message, friendId));
+      }
+    );
   }, [dispatch]);
 
   const onClickDisplayMessagesHandler = (recipientId, index, uniqueId) => {
@@ -166,9 +174,7 @@ function Chat({ ...props }) {
           <ul className="col-span-3 bg-black w-80">
             {friends.length &&
               friends.map((friend, index) => {
-                if (friend.userId !== authUserId) {
-                  return null;
-                }
+                if (friend.userId !== authUserId) return null;
 
                 const {
                   id,
@@ -264,6 +270,7 @@ function Chat({ ...props }) {
           messages={messages[isActiveChat]}
           authUserId={authUserId}
           setMessages={(messages) => {}}
+          socket={socket}
         />
 
         {indexOfActiveChat !== null && (
