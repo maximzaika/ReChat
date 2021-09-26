@@ -56,6 +56,10 @@
 # How to Run
 
 - Client side:
+  * Create file `./src/services/apis.js`
+    * Add Firebase API key with the following exported constant:
+      `export const firebaseAuthenticationAPIKey = "FIREBASE_API_KEY";`
+
   * In the project directory run `npm start`
 
 - Server side:
