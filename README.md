@@ -60,12 +60,11 @@
     * Add Firebase API key with the following exported constant:
       `export const firebaseAuthenticationAPIKey = "FIREBASE_API_KEY";`
 
-  * In the project directory run `npm start`
+  * In the client directory run `npm start`
 
 - Server side:
   * Ensure that SQL database is running
-  * In the project directory run `cd .\server\`
-  * Then run `node .\server.js` or `nodemon .\server.js`
+  * In the server directory run `node .\server.js` or `nodemon .\server.js`
 
 # Getting Started with Create React App
 
