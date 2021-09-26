@@ -59,11 +59,15 @@ const emitConnectUser = (socket, userId, recipientId, roomId) => (dispatch) => {
   });
 };
 
-const emitDisconnectUser = (socket) => (dispatch) => {
-  console.log("disconnected");
-  dispatch(socketDisconnected());
-  socket.emit(socketActions.disconnectRoom);
-};
+const emitDisconnectUserFromRoom =
+  (socket, authUserId, friendId) => (dispatch) => {
+    console.log("disconnected");
+    dispatch(socketDisconnected());
+    socket.emit(socketActions.disconnectRoom, {
+      senderId: authUserId,
+      recipientId: friendId,
+    });
+  };
 
 const showActiveChat = (friendId, index) => ({
   type: actions.SOCKET_SHOW_ACTIVE_CHAT,
@@ -87,11 +91,9 @@ export const showChat =
     if (friends.length < 0 || isActiveChat === friendId || !uniqueId) return;
 
     if (friendId || friendId !== "") {
-      dispatch(emitConnectUser(socket, authUserId, friendId, uniqueId));
-      // console.log("test", isActiveChat);
-      if (isActiveChat) dispatch(emitDisconnectUser(socket));
-      // console.log({ uniqueId, authUserId, friendId });
       dispatch(emitOnlineState(socket, uniqueId, authUserId, friendId));
+      if (isActiveChat)
+        dispatch(emitDisconnectUserFromRoom(socket, authUserId, isActiveChat));
     }
 
     dispatch(showActiveChat(friendId, index));

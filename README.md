@@ -37,6 +37,14 @@
 
 # Known bugs
 
+- ~~Server: Current online status is not getting saved. If both users
+  are online, it is getting updated correctly. However, if users 
+  connect to the chat at different times and one of the users is online
+  another user is not get notified. A.k.a doesn't work on page refresh.~~
+- ~~Server: Last online is not getting updated. If both users
+  are online, it is getting updated correctly. However, if users
+  connect to the chat at different times and one of the users is online
+  another user is not get notified. A.k.a doesn't work on page refresh.~~
 - Client: Auto authentication doesn't validate token's expiry time.
 - Client: Message input size doesn't get reset after it is sent.
 - Client: Showing seen before sent / received (but sent/received is 

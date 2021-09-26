@@ -6,8 +6,10 @@ const log = (description, color = "default", showLog = true) => {
   if (!logData) return;
   if (showLog) {
     switch (color) {
-      case "ref":
+      case "red":
         return console.log(description.red);
+      case "cyan":
+        return console.log(description.cyan);
       case "green":
         return console.log(description.green);
       case "yellow":
