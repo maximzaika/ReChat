@@ -1,5 +1,6 @@
 import * as actions from "../actionTypes";
 import { updateObject } from "../../shared/updateData";
+import { toEncrypt } from "../../shared/aes";
 const dateFormat = require("dateformat");
 
 /** @param {
@@ -255,12 +256,14 @@ const socketOnMessageState = (
   return updateObject(state, { messages: messages });
 };
 
-const socketOnMessageDelete = (state, { messageId, message }) => {
+const socketOnMessageDelete = (state, { messageId, message, friendId }) => {
   const messages = { ...state.messages };
-  console.log("I STOPPED HERE socketReducer at 260");
-  // const index = messages.findIndex((message) => message.id === messageId);
-  // messages[index] = message;
-  // return updateObject(state, { messages: messages });
+  const index = messages[friendId].findIndex(
+    (message) => message.id === messageId
+  );
+  messages[friendId][index].message = toEncrypt(message);
+  messages[friendId][index].messageStatus = 3;
+  return updateObject(state, { messages: messages });
 };
 
 const socketReducer = (state = initialState, action) => {

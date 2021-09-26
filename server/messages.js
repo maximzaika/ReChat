@@ -260,12 +260,27 @@ const updateMessagesStatusHandler = (userId, recipientId, status) => {
   return messageIds;
 };
 
-const deleteMessageHandler = (messageId, newMessage) => {
+// check whether sender is authentic, change message to "deleted",
+// change message status to 3 = deleted
+const deleteMessageHandler = (messageId, newMessage, senderId) => {
   const _messages = [...messages];
-  const index = _messages.findIndex((message) => message.id === messageId);
+  /* check whether message exists and whether the sender is the person who sent this
+     message before. Receivers are not allowed to delete sender's messages. */
+  const index = _messages.findIndex(
+    (message) => message.id === messageId && message.senderId === senderId
+  );
   if (index === -1) return false;
+  // if message is already deleted then there is some error
   if (_messages[index].messageStatus === 3) return false;
-  _messages[index].encryptedMessage = newMessage;
+
+  const timestamp = new Date(_messages[index].timestamp);
+  const allowedDeletion =
+    (new Date().getTime() - timestamp.getTime()) / 3600000;
+
+  // if message is past 1 hour time frame then it cannot be deleted
+  if (allowedDeletion > 1) return false;
+
+  _messages[index].message = newMessage;
   _messages[index].messageStatus = 3;
   messages = _messages;
   return true;

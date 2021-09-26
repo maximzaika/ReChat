@@ -125,8 +125,8 @@ function Chat({ ...props }) {
 
     socket.on(
       socketIoActions.messageDelete,
-      ({ isDeleted, messageId, message }) => {
-        dispatch(onMessageDelete(isDeleted, messageId, message));
+      ({ isDeleted, messageId, message, friendId }) => {
+        dispatch(onMessageDelete(isDeleted, messageId, message, friendId));
       }
     );
   }, [dispatch]);

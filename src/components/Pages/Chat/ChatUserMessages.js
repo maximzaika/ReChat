@@ -28,12 +28,6 @@ export default function ChatUserMessages({
     // setMessages(tempMessage);
   };
 
-  const onClickDelete = (index, messageId) => {
-    console.log("delete", index);
-    console.log("messageId", messageId);
-    dispatch(emitMessageDelete(socket, messageId));
-  };
-
   return (
     <Fragment>
       {isActiveChat && messages && (
@@ -44,6 +38,8 @@ export default function ChatUserMessages({
             const minutes = date.getMinutes();
             const time = `${hours}:${minutes}`;
             const incomingMessage = toDecrypt(message.message).split("\n");
+            const deleteTimeframe =
+              (new Date().getTime() - date.getTime()) / 3600000;
 
             // Sent messages are always on the right
             // while received messages are always on the left
@@ -87,9 +83,23 @@ export default function ChatUserMessages({
                       <p className="m-0">
                         {m.split(" ").join("") === "" ? "\u00a0\u00a0" : m}
                       </p>
-                      <span onClick={() => onClickDelete(index, message.id)}>
-                        DEL
-                      </span>
+                      {authUserId === message.senderId &&
+                        message.messageStatus !== 3 &&
+                        deleteTimeframe <= 1 && (
+                          <span
+                            onClick={() =>
+                              dispatch(
+                                emitMessageDelete(
+                                  socket,
+                                  message.id,
+                                  message.timestamp
+                                )
+                              )
+                            }
+                          >
+                            DEL
+                          </span>
+                        )}
                     </div>
                   ))}
                 </span>

@@ -1,3 +1,68 @@
+# Features
+
+- Authentication system:
+  * Combination of Firebase and SQL (firebase stores username and password, 
+    while SQL stores other data - planned to be changed in the future to use
+    NodeJS/ExpressJS + JWT). Currently, SQL is accessed via PHP.
+  * Allows users to register new accounts:
+    1. Validates existing accounts.
+    2. Validates passwords to ensure their strength.
+    3. All other features that Firebase provides.
+  * Allows users to login and retrieve their friend list & messages.
+  * Allows users to logout manually on the main page.
+  * Based on Firebase's token stored in cache automatically logs user in
+    (if token isn't expired - for now it never gets expired for some reason
+     - the plan is to fix it after changing the architecture to ExpressJS + JWT).
+- Connects to all the friends (chat rooms) in the list on load.
+  * Using Socket.IO for real-time processing.
+- Sends message by the press of Enter on the keyboard or button.
+- Messages that contain new line get broken down correctly.
+- Resizes the input of the new message if it gets too long:
+  * Up to 5 lines, and then it goes into overflow.
+- Sender's and recipient's messages are displayed correctly on each side:
+  * Sender (my message) is on the right, friend's message is on the left side.
+- Shows user's online status when their chat is opened.
+  * Shows last seen status if user has closed the chat.
+- Shows number of unread messages in the friend list.
+- Sorts friend list based on the last received message (timestamp):
+  * Friend with the most recent messages is always on top.
+- Updates friend's list with the most recent message
+- Shows the date of the received message in the following format:
+  * Received yesterday? - shows Yesterday
+  * Received within the previous week? - shows the day of the week: Sunday, Monday
+  * Received more than a week ago? - shows the exact date: 15/12/2020
+- Shows sent, received, seen message statuses that are verified by the server.
+- Allows users to delete the most recent messages. The message is recent if it
+  is within 1 hour time frame.
+
+# Known bugs
+
+- Client: Auto authentication doesn't validate token's expiry time.
+- Client: Message input size doesn't get reset after it is sent.
+- Client: Showing seen before sent / received (but sent/received is 
+  shown correctly at the end)
+- Server: Refreshing the page and opening the chat is not showing 
+  online status if it was open before
+- Server or Client : Valeriy account sending to Test updates Maxim instead. 
+  It doesn't take the correct id or index onto the account.
+- Client (friend list): If chat is opened, message counter should always be 
+  0 or reset itself if message in view (right now it doesn't reset in this case)
+- Client : Delete message button (1hr time timer) refresh on load or rerender. 
+  It needs to disable the deletion if it goes past 1 hr automatically.
+- Server : If 2 parties have chat opened, the message doesn't get saved on the 
+  server side. Which causes issues like deleting non-existent message or not
+  receiving the message on page refresh.
+
+# How to Run
+
+- Client side:
+  * In the project directory run `npm start`
+
+- Server side:
+  * Ensure that SQL database is running
+  * In the project directory run `cd .\server\`
+  * Then run `node .\server.js` or `nodemon .\server.js`
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
