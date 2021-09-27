@@ -1,3 +1,29 @@
+# ReChat
+
+Chat application that is currently supported by large screen devices. Once
+core features are enabled, the UI will be improved and will also be 
+converted to mobile first. Allows users to create accounts and send messages
+to their friends in the friend list (adding friends isn't added yet). 
+Messages are encrypted and verified by the server. Connection must always 
+go through the ExpressJS (client - server - client). It is a stateful API.
+
+# Tech
+
+- Client:
+  - ReactJS, TailwindCSS, SocketIO, HTML, CSS3, Firebase, Supports HTTP Requests
+
+- Server:
+  - ExpressJS, SocketIO, PHP, Supports HTTP requests
+
+# Plan
+
+- Fix remaining bugs in the bug section
+- Rename current friend list to a chat list
+- Create an independent friend list and allow users to add and search friends
+- Move Authentication logic to ExpressJS (currently it is a mix of Firebase & PHP)
+- Allow users to customise their privacy, like:
+  - Disable Last Seen feature
+
 # Features
 
 - Authentication system:
@@ -45,12 +71,12 @@
   are online, it is getting updated correctly. However, if users
   connect to the chat at different times and one of the users is online
   another user is not get notified. A.k.a doesn't work on page refresh.~~
+- ~~Server: Refreshing the page and opening the chat is not showing
+    online status if it was open before~~
 - Client: Auto authentication doesn't validate token's expiry time.
 - Client: Message input size doesn't get reset after it is sent.
 - Client: Showing seen before sent / received (but sent/received is 
   shown correctly at the end)
-- Server: Refreshing the page and opening the chat is not showing 
-  online status if it was open before
 - Server or Client : Valeriy account sending to Test updates Maxim instead. 
   It doesn't take the correct id or index onto the account.
 - Client (friend list): If chat is opened, message counter should always be 
