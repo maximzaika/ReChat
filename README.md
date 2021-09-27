@@ -94,11 +94,15 @@ go through the ExpressJS (client - server - client). It is a stateful API.
     * Add Firebase API key with the following exported constant:
       `export const firebaseAuthenticationAPIKey = "FIREBASE_API_KEY";`
 
-  * In the client directory run `npm start`
+  * In the client directory run the following commands:
+    1. `npm install`
+    2. `npm start`
 
 - Server side:
   * Ensure that SQL database is running
-  * In the server directory run `node .\server.js` or `nodemon .\server.js`
+  * In the server directory run the following commands:
+    1. `npm install`
+    2. `node .\server.js` or `nodemon .\server.js`
 
 # Getting Started with Create React App
 
