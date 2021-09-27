@@ -7,6 +7,13 @@ to their friends in the friend list (adding friends isn't added yet).
 Messages are encrypted and verified by the server. Connection must always 
 go through the ExpressJS (client - server - client). It is a stateful API.
 
+# Video Demonstration 
+
+- Build: Alpha 0.91:
+  - Comes with few bugs that will be fixed within a week depending
+    on my time availability.
+   [YouTube Video Demonstration](https://youtu.be/yg3dsdgJAU4)
+
 # Tech
 
 - Client:
