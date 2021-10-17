@@ -95,6 +95,10 @@ go through the ExpressJS (client - server - client). It is a stateful API.
 - ~~Server : If 2 parties have chat opened, the message doesn't get saved on the 
   server side. Which causes issues like deleting non-existent message or not
   receiving the message on page refresh.~~
+- ~~Client: New message is incorrectly updated in the friend list upon sending a 
+  new message. Expected behaviour: friend's recent message is updated and friend
+  list is sorted by the most recent message. Current behaviour: incorrect friend
+  is updated (always the top friend) and no sorting is done.~~
 
 # How to Run
 

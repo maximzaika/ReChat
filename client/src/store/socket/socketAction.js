@@ -218,6 +218,7 @@ export const emitMessage =
     const timestamp = dateFormat(new Date(), "isoDateTime");
     const encryptedMessage = toEncrypt(message);
 
+    // Notify server that user is no longer typing
     dispatch(emitUserTypingState(socket, false, roomId, senderId));
 
     dispatch(
@@ -231,6 +232,7 @@ export const emitMessage =
       )
     );
 
+    // Send a new message to the server
     socket.emit(socketActions.sendMessage, {
       temporaryId: temporaryMessageId,
       senderId: senderId,

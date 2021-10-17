@@ -58,6 +58,11 @@ const updateInput = (state, { input, userTyping }) => {
 };
 
 const updateFriends = (state, { senderId, authUserId, message, timestamp }) => {
+  console.log("senderId", senderId);
+  console.log("authUserId", authUserId);
+  console.log("message", message);
+  console.log("timestamp", timestamp);
+
   const friends = [...state.friends];
   let index = -1;
   if (senderId === authUserId) {
@@ -73,6 +78,9 @@ const updateFriends = (state, { senderId, authUserId, message, timestamp }) => {
   if (senderId !== authUserId) {
     friends[index].unreadMessages++;
   }
+
+  // sort the friends by time (most recent messages go on top)
+  friends.sort((a, b) => new Date(b.time) - new Date(a.time));
 
   return updateObject(state, { friends: friends });
 };
@@ -91,12 +99,14 @@ const addMessage = (
 ) => {
   const updatedState = {
     ...updateFriends(state, {
-      senderId: senderId,
+      senderId: recipientId,
       authUserId: authUserId,
       message: encryptedMessage,
       timestamp: timestamp,
     }),
   };
+
+  // add a new message to the recipient
   updatedState.messages[recipientId] = [
     {
       id: temporaryId,
@@ -181,7 +191,7 @@ const socketOnNewMessage = (
   };
 
   // sort users with new messages to the top of the friend list
-  updatedState.friends.sort((a, b) => new Date(b.time) - new Date(a.time));
+  // updatedState.friends.sort((a, b) => new Date(b.time) - new Date(a.time));
 
   /* if chat is active, then need to keep track of the new index after the sort
      to ensure that it doesn't get closed */
@@ -198,8 +208,6 @@ const socketOnNewMessage = (
   // if no chat exists with this user then create it
   if (!updatedState.messages[user]) updatedState.messages[user] = [];
 
-  console.log("updatedState", updatedState);
-  console.log("user", user);
   updatedState.messages[user] = [
     {
       id: messageId,
