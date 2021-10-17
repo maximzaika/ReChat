@@ -90,9 +90,9 @@ go through the ExpressJS (client - server - client). It is a stateful API.
   0 or reset itself if message in view (right now it doesn't reset in this case)
 - Client : Delete message button (1hr time timer) refresh on load or rerender. 
   It needs to disable the deletion if it goes past 1 hr automatically.
-- Server : If 2 parties have chat opened, the message doesn't get saved on the 
+- ~~Server : If 2 parties have chat opened, the message doesn't get saved on the 
   server side. Which causes issues like deleting non-existent message or not
-  receiving the message on page refresh.
+  receiving the message on page refresh.~~
 
 # How to Run
 

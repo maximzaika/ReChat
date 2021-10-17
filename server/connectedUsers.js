@@ -40,7 +40,7 @@ const newConnectedUserHandler = (socketId, userId, recipientId, roomId) => {
   const newUser = new ConnectedUser(socketId, userId, recipientId, roomId);
   connectedUsers.push(newUser);
 
-  console.log("newConnectedUserHandler", connectedUsers);
+  // console.log("newConnectedUserHandler", connectedUsers);
 
   return [newUser, true];
 };
@@ -54,7 +54,7 @@ const newConnectedUserHandler = (socketId, userId, recipientId, roomId) => {
  * @return {ConnectedUser} Users connected.
  */
 const findConnectedUserHandler = (socketId, roomId) => {
-  console.log("findConnectedUserHandler", connectedUsers);
+  // console.log("findConnectedUserHandler", connectedUsers);
   return connectedUsers.find(
     (user) => user.socketId !== socketId && user.roomId === roomId
   );
@@ -70,7 +70,7 @@ const findConnectedUserHandler = (socketId, roomId) => {
  * @return {ConnectedUser} Users connected.
  */
 const findUniqueConnectedUserHandler = (socketId, senderId, roomId) => {
-  console.log("findUniqueConnectedUserHandler", connectedUsers);
+  // console.log("findUniqueConnectedUserHandler", connectedUsers);
   return connectedUsers.find(
     (user) =>
       user.socketId !== socketId &&
@@ -86,7 +86,7 @@ const findUniqueConnectedUserHandler = (socketId, senderId, roomId) => {
  * @return {ConnectedUser} User that received the message.
  */
 const checkMessageReceivedHandler = (receivedFromUserId, receivedByUserId) => {
-  console.log("checkMessageReceivedHandler", connectedUsers);
+  // console.log("checkMessageReceivedHandler", connectedUsers);
 
   return connectedUsers.find(
     (user) =>
@@ -134,7 +134,7 @@ const disconnectFromRoomHandler = (socketId, userId, recipientId) => {
      window) then disconnect from the server only and do not notify
      other connected clients */
   connectedUsers = newConnectedUsers;
-  console.log("disconnectFromRoomHandler", connectedUsers);
+  // console.log("disconnectFromRoomHandler", connectedUsers);
   return false;
 };
 
@@ -174,7 +174,7 @@ const disconnectUserHandler = (socketId) => {
   );
 
   connectedUsers = newConnectedUsers;
-  console.log("disconnectUserHandler", connectedUsers);
+  // console.log("disconnectUserHandler", connectedUsers);
 
   /* notify recipients that their friend has disconnected */
   if (!similarConnectedUsers.length) return disconnectedUsers;

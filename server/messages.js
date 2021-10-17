@@ -148,6 +148,8 @@ const findPendingMessagesHandler = (userId, messageStatus) => {
     }
   }
 
+  // console.log("findPendingMessagesHandler", messages);
+
   return messageIds;
 };
 
@@ -165,26 +167,32 @@ const getUserMessagesHandler = (userId) => {
    *  }
    * @type {Object.<string, Message[]>}
    * */
-  const _messages = {};
-  for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].senderId === userId || messages[i].recipientId === userId) {
-      if (messages[i].senderId === userId) {
-        if (messages[i].recipientId in _messages) {
-          _messages[messages[i].recipientId].push(messages[i]);
+  const usersMessages = {};
+  const _messages = [...messages];
+  for (let i = _messages.length - 1; i >= 0; i--) {
+    if (
+      _messages[i].senderId === userId ||
+      _messages[i].recipientId === userId
+    ) {
+      if (_messages[i].senderId === userId) {
+        if (_messages[i].recipientId in usersMessages) {
+          usersMessages[_messages[i].recipientId].push(_messages[i]);
         } else {
-          _messages[messages[i].recipientId] = [messages[i]];
+          usersMessages[_messages[i].recipientId] = [_messages[i]];
         }
       } else {
-        if (messages[i].senderId in _messages) {
-          _messages[messages[i].senderId].push(messages[i]);
+        if (_messages[i].senderId in usersMessages) {
+          usersMessages[_messages[i].senderId].push(_messages[i]);
         } else {
-          _messages[messages[i].senderId] = [messages[i]];
+          usersMessages[_messages[i].senderId] = [_messages[i]];
         }
       }
     }
   }
 
-  return _messages;
+  // console.log("getUserMessagesHandler", messages);
+
+  return usersMessages;
 };
 
 /**
@@ -211,6 +219,7 @@ const storeMessageHandler = (
     0
   );
   messages.push(message);
+  // console.log("storeMessageHandler", messages);
   return message;
 };
 
@@ -231,8 +240,14 @@ const updateMessageStatusHandler = (messageId, userId, recipientId, status) => {
       message.recipientId === recipientId &&
       message.messageStatus === status - 1
   );
-  _messages[messageIndex] = status;
+
+  if (messageIndex < 0) return false;
+
+  _messages[messageIndex].messageStatus = status;
   messages = _messages;
+
+  // console.log("updateMessageStatusHandler", messages);
+
   return true;
 };
 
@@ -257,6 +272,9 @@ const updateMessagesStatusHandler = (userId, recipientId, status) => {
     }
   }
   messages = _messages;
+
+  // console.log("updateMessagesStatusHandler", messages);
+
   return messageIds;
 };
 
@@ -283,6 +301,9 @@ const deleteMessageHandler = (messageId, newMessage, senderId) => {
   _messages[index].message = newMessage;
   _messages[index].messageStatus = 3;
   messages = _messages;
+
+  // console.log("deleteMessageHandler", messages);
+
   return true;
 };
 
