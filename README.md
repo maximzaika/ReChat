@@ -30,6 +30,8 @@ go through the ExpressJS (client - server - client). It is a stateful API.
 - Move Authentication logic to ExpressJS (currently it is a mix of Firebase & PHP)
 - Allow users to customise their privacy, like:
   - Disable Last Seen feature
+- Messages that cannot be deleted for both users at the same time (expired time), allow
+  clients to delete them locally only.
 
 # Features
 
@@ -86,13 +88,21 @@ go through the ExpressJS (client - server - client). It is a stateful API.
   shown correctly at the end)
 - Server or Client : Valeriy account sending to Test updates Maxim instead. 
   It doesn't take the correct id or index onto the account.
-- Client (friend list): If chat is opened, message counter should always be 
-  0 or reset itself if message in view (right now it doesn't reset in this case)
-- Client : Delete message button (1hr time timer) refresh on load or rerender. 
+- ~~Client (friend list): If chat is opened, message counter should always be 
+  0 or reset itself if message in view (right now it doesn't reset in this case)~~
+- Client: Delete message button (1hr time timer) refresh on load or rerender. 
   It needs to disable the deletion if it goes past 1 hr automatically.
+- ~~Client: Receiving a message from the user that has no messages crashing the 
+  application.~~
 - ~~Server : If 2 parties have chat opened, the message doesn't get saved on the 
   server side. Which causes issues like deleting non-existent message or not
   receiving the message on page refresh.~~
+- ~~Client: New message is incorrectly updated in the friend list upon sending a 
+  new message. Expected behaviour: friend's recent message is updated and friend
+  list is sorted by the most recent message. Current behaviour: incorrect friend
+  is updated (always the top friend) and no sorting is done.~~
+- Client: If message is deleted, friend list is not showing that it is deleted but
+  instead showing the full message.
 
 # How to Run
 

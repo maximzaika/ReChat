@@ -57,6 +57,7 @@ const updateInput = (state, { input, userTyping }) => {
   return updateObject(state, { friends: friends });
 };
 
+/** updates friend list if the new message is received */
 const updateFriends = (state, { senderId, authUserId, message, timestamp }) => {
   const friends = [...state.friends];
   let index = -1;
@@ -70,9 +71,13 @@ const updateFriends = (state, { senderId, authUserId, message, timestamp }) => {
   friends[index].lastMessage = message;
   friends[index].time = timestamp;
 
-  if (senderId !== authUserId) {
-    friends[index].unreadMessages++;
-  }
+  // If index of the user is not the same as the active, then increment the
+  // message counter. (usually this function is called when friend list needs to
+  // be updated and it happens on a new message only).
+  if (index !== state.isActiveChat.index) friends[index].unreadMessages++;
+
+  // sort the friends by time (most recent messages go on top)
+  friends.sort((a, b) => new Date(b.time) - new Date(a.time));
 
   return updateObject(state, { friends: friends });
 };
@@ -91,12 +96,14 @@ const addMessage = (
 ) => {
   const updatedState = {
     ...updateFriends(state, {
-      senderId: senderId,
+      senderId: recipientId,
       authUserId: authUserId,
       message: encryptedMessage,
       timestamp: timestamp,
     }),
   };
+
+  // add a new message to the recipient
   updatedState.messages[recipientId] = [
     {
       id: temporaryId,
@@ -180,9 +187,6 @@ const socketOnNewMessage = (
     }),
   };
 
-  // sort users with new messages to the top of the friend list
-  updatedState.friends.sort((a, b) => new Date(b.time) - new Date(a.time));
-
   /* if chat is active, then need to keep track of the new index after the sort
      to ensure that it doesn't get closed */
   let activeChatIndex = state.isActiveChat.index;
@@ -194,6 +198,10 @@ const socketOnNewMessage = (
 
   // const messages = { ...state.messages };
   const user = senderId === authUserId ? recipientId : senderId;
+
+  // if no chat exists with this user then create it
+  if (!updatedState.messages[user]) updatedState.messages[user] = [];
+
   updatedState.messages[user] = [
     {
       id: messageId,
