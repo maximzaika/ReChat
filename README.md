@@ -30,6 +30,8 @@ go through the ExpressJS (client - server - client). It is a stateful API.
 - Move Authentication logic to ExpressJS (currently it is a mix of Firebase & PHP)
 - Allow users to customise their privacy, like:
   - Disable Last Seen feature
+- Messages that cannot be deleted for both users at the same time (expired time), allow
+  clients to delete them locally only.
 
 # Features
 
