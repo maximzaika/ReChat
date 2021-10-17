@@ -3,7 +3,6 @@ import * as socketActions from "../../shared/socketIoActionTypes";
 import dateFormat from "dateformat";
 import { v4 as uuid } from "uuid";
 import { toEncrypt } from "../../shared/aes";
-import { SOCKET_EMIT_MESSAGE_DELETE } from "../actionTypes";
 
 const fetchFriendsSuccess = (friendsData) => {
   const tempFriends = [...friendsData];
