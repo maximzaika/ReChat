@@ -88,8 +88,10 @@ go through the ExpressJS (client - server - client). It is a stateful API.
   It doesn't take the correct id or index onto the account.
 - Client (friend list): If chat is opened, message counter should always be 
   0 or reset itself if message in view (right now it doesn't reset in this case)
-- Client : Delete message button (1hr time timer) refresh on load or rerender. 
+- Client: Delete message button (1hr time timer) refresh on load or rerender. 
   It needs to disable the deletion if it goes past 1 hr automatically.
+- ~~Client: Receiving a message from the user that has no messages crashing the 
+  application.~~
 - ~~Server : If 2 parties have chat opened, the message doesn't get saved on the 
   server side. Which causes issues like deleting non-existent message or not
   receiving the message on page refresh.~~

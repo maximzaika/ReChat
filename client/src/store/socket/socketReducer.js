@@ -194,6 +194,12 @@ const socketOnNewMessage = (
 
   // const messages = { ...state.messages };
   const user = senderId === authUserId ? recipientId : senderId;
+
+  // if no chat exists with this user then create it
+  if (!updatedState.messages[user]) updatedState.messages[user] = [];
+
+  console.log("updatedState", updatedState);
+  console.log("user", user);
   updatedState.messages[user] = [
     {
       id: messageId,
