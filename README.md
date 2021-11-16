@@ -13,7 +13,7 @@ go through the ExpressJS (client - server - client). It is a stateful API.
   - Comes with few bugs that will be fixed within a week depending
     on my time availability.
    [YouTube Video Demonstration](https://youtu.be/yg3dsdgJAU4)
-   Node: All the bugs that can be seen in the video of 0.91 are fixed. Video is to be updated.
+   **Note: All the bugs that can be seen in the video of 0.91 are fixed. Video is to be updated.**
 
 # Tech
 
